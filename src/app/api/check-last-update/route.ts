@@ -3,12 +3,12 @@ import clientPromise from '../../../lib/mongodb';
 import { NextResponse } from 'next/server';
 
 export async function GET(_req: Request, _res: Response) {
-  try {
-    const { userId } = auth();
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' });
-    }
+  const { userId } = auth();
+  if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' });
+  }
 
+  try {
     const client = await clientPromise;
     const db = client.db('examPrep');
     const examUpdates = db.collection('examUpdates');
