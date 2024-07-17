@@ -74,7 +74,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadSuccess }) =
     formData.append('examName', finalExamName);
     formData.append('examTitle', examTitle);
     formData.append('examCategory', examCategory);
-    formData.append('userName', user?.fullName || 'Anonymous');
+    formData.append('userName', user?.fullName ?? 'Anonymous');
 
     try {
       const response = await fetch('/api/upload-resource', {

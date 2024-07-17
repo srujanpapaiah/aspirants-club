@@ -26,9 +26,9 @@ export async function POST(req: Request) {
   try {
     // Parse the request body
     const body = await req.json();
-    const { examId, examName, examDate, examDetails, source } = body;
+    const { examId, examName, examDate, examDetails, source, username } = body;
 
-    if (!examName || !examDate || !examDetails || !source) {
+    if (!examName || !examDate || !examDetails || !source || !username) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -53,10 +53,11 @@ export async function POST(req: Request) {
     const editHistoryEntry: EditHistoryEntry = {
       userId,
       updatedAt: new Date(),
+      username,
       changes: {
         examDate: new Date(examDate),
         examDetails,
-        source
+        source,
       }
     };
 
