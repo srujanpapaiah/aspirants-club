@@ -1,9 +1,8 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { auth } from '@clerk/nextjs/server';
 import clientPromise from '../../../lib/mongodb';
 import { NextResponse } from 'next/server';
 
-export async function GET(req: NextApiRequest, res: NextApiResponse) {
+export async function GET(_req: Request, _res: Response) {
   try {
     const { userId } = auth();
     if (!userId) {

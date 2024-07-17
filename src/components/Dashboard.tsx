@@ -143,7 +143,7 @@ const Dashboard: React.FC = () => {
               <ResourceGrid resources={filteredResources} />
             </div>
             <div className="space-y-6">
-              <ExamTimeline />
+              <ExamTimeline refreshTrigger={0} />
             </div>
           </div>
         </main>

@@ -8,7 +8,7 @@ interface UpdateExamInfoModalProps {
 }
 
 const popularExams = [
-  "UPSC Civil Services", "IAS", "IPS", "IFS", "SSC CGL", "SSC CHSL",
+  "UPSC Civil Services", "SSC CGL", "SSC CHSL",
   "IBPS PO", "IBPS Clerk", "RBI Grade B", "SBI PO", "Railway RRB",
   "GATE", "UGC NET", "CTET", "NDA", "CDS", "CAPF", "State PSC", "Other"
 ];
@@ -25,6 +25,7 @@ const UpdateExamInfoModal: React.FC<UpdateExamInfoModalProps> = ({ onClose, onUp
   const [exactDate, setExactDate] = useState('');
   const [startMonth, setStartMonth] = useState('');
   const [endMonth, setEndMonth] = useState('');
+  const [year, setYear] = useState(new Date().getFullYear());
   const [examDetails, setExamDetails] = useState('');
   const [source, setSource] = useState('');
   const [isExactDate, setIsExactDate] = useState(true);
@@ -46,6 +47,25 @@ const UpdateExamInfoModal: React.FC<UpdateExamInfoModalProps> = ({ onClose, onUp
     checkLastUpdate();
   }, []);
 
+  const validateDateRange = () => {
+    const currentDate = new Date();
+    const selectedStartDate = new Date(year, months.indexOf(startMonth));
+    const selectedEndDate = new Date(year, months.indexOf(endMonth));
+
+    if (selectedEndDate < selectedStartDate) {
+      setErrorMessage("End month cannot be before start month.");
+      return false;
+    }
+
+    if (selectedEndDate < currentDate) {
+      setErrorMessage("The selected date range has already passed.");
+      return false;
+    }
+
+    setErrorMessage('');
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (errorMessage) return;
@@ -53,7 +73,13 @@ const UpdateExamInfoModal: React.FC<UpdateExamInfoModalProps> = ({ onClose, onUp
     const finalExamName = examName === 'Other' ? customExamName : examName;
     let examDate = exactDate;
     if (!isExactDate) {
-      examDate = `Between ${startMonth} to ${endMonth}`;
+      if (!validateDateRange()) return;
+      examDate = `Between ${startMonth} to ${endMonth} ${year}`;
+    } else {
+      if (new Date(exactDate) < new Date()) {
+        setErrorMessage("The selected date has already passed.");
+        return;
+      }
     }
 
     try {
@@ -141,32 +167,43 @@ const UpdateExamInfoModal: React.FC<UpdateExamInfoModalProps> = ({ onClose, onUp
               value={exactDate}
               onChange={(e) => setExactDate(e.target.value)}
               required
+              min={new Date().toISOString().split('T')[0]}
               className="w-full bg-[#2C2C2C] text-[#E0E0E0] border border-[#66BB6A] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#66BB6A]"
             />
           ) : (
-            <div className="flex space-x-2">
-              <select
-                value={startMonth}
-                onChange={(e) => setStartMonth(e.target.value)}
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <select
+                  value={startMonth}
+                  onChange={(e) => setStartMonth(e.target.value)}
+                  required
+                  className="w-1/2 bg-[#2C2C2C] text-[#E0E0E0] border border-[#66BB6A] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#66BB6A]"
+                >
+                  <option value="">Start Month</option>
+                  {months.map((month) => (
+                    <option key={month} value={month}>{month}</option>
+                  ))}
+                </select>
+                <select
+                  value={endMonth}
+                  onChange={(e) => setEndMonth(e.target.value)}
+                  required
+                  className="w-1/2 bg-[#2C2C2C] text-[#E0E0E0] border border-[#66BB6A] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#66BB6A]"
+                >
+                  <option value="">End Month</option>
+                  {months.map((month) => (
+                    <option key={month} value={month}>{month}</option>
+                  ))}
+                </select>
+              </div>
+              <input
+                type="number"
+                value={year}
+                onChange={(e) => setYear(parseInt(e.target.value))}
+                min={new Date().getFullYear()}
                 required
-                className="w-1/2 bg-[#2C2C2C] text-[#E0E0E0] border border-[#66BB6A] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#66BB6A]"
-              >
-                <option value="">Start Month</option>
-                {months.map((month) => (
-                  <option key={month} value={month}>{month}</option>
-                ))}
-              </select>
-              <select
-                value={endMonth}
-                onChange={(e) => setEndMonth(e.target.value)}
-                required
-                className="w-1/2 bg-[#2C2C2C] text-[#E0E0E0] border border-[#66BB6A] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#66BB6A]"
-              >
-                <option value="">End Month</option>
-                {months.map((month) => (
-                  <option key={month} value={month}>{month}</option>
-                ))}
-              </select>
+                className="w-full bg-[#2C2C2C] text-[#E0E0E0] border border-[#66BB6A] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#66BB6A]"
+              />
             </div>
           )}
           <textarea

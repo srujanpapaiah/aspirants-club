@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { S3 } from 'aws-sdk';
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@clerk/nextjs/server';
@@ -10,7 +10,9 @@ const s3 = new S3({
   region: process.env.AWS_REGION,
 });
 
-export async function POST(request: Request) {
+export const runtime = 'nodejs'; // or 'edge' if you prefer, but 'nodejs' is likely needed for AWS SDK
+
+export async function POST(request: NextRequest) {
   try {
     const { userId } = auth();
     if (!userId) {
@@ -23,7 +25,6 @@ export async function POST(request: Request) {
     const examTitle = formData.get('examTitle') as string;
     const examCategory = formData.get('examCategory') as string;
     const userName = formData.get('userName') as string;
-
 
     if (!file || !examName || !examTitle || !examCategory || !userName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -65,9 +66,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to upload resource' }, { status: 500 });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

@@ -7,8 +7,16 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'Aspirants Club',
-  description: 'Collaborate, Share, and Excel in Your Exam Preparation',
-}
+  description: 'Exam preparation and information platform',
+  manifest: '/manifest.json',
+  themeColor: '#4A90E2',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Aspirants Club',
+  },
+};
 
 export default function RootLayout({
   children,
@@ -18,6 +26,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
+      <head>
+          <link rel="icon" href="/favicon.ico" sizes="any" />
+          <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        </head>
         <body className={inter.className}>
           <UserDataSaver />
           {children}
