@@ -53,7 +53,6 @@ export async function POST(req: Request) {
     const editHistoryEntry: EditHistoryEntry = {
       userId,
       updatedAt: new Date(),
-      username,
       changes: {
         examDate: new Date(examDate),
         examDetails,
