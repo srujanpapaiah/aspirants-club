@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, Book, Link, ArrowLeft, Bell } from 'lucide-react';
 import { useUser } from "@clerk/nextjs";
-import { requestForToken, onMessageListener } from '@/lib/firebase';
 import toast from 'react-hot-toast';
 
 
@@ -33,11 +32,6 @@ const ExamDetailPage: React.FC<{ params: { id: string } }> = ({ params }) => {
     }
   }, [params.id, user]);
 
-  useEffect(() => {
-    onMessageListener().then((payload) => {
-      toast(payload.notification.title);
-    });
-  }, []);
 
   const fetchExamDetail = async (examId: string) => {
     setIsLoading(true);
@@ -90,18 +84,14 @@ const ExamDetailPage: React.FC<{ params: { id: string } }> = ({ params }) => {
 
   const handleSubscribe = async () => {
     try {
-      const token = await requestForToken();
-      if (!token) {
-        toast.error('Failed to get notification permission');
-        return;
-      }
+
 
       const response = await fetch(`/api/subscribe/${params.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token, userId: user?.id }),
+        body: JSON.stringify({ userId: user?.id }),
       });
 
       if (response.ok) {
