@@ -15,7 +15,7 @@ interface ExamDetail {
   examDate: string | null;
   examDetails: string;
   source: string;
-  logoUrl?: string; // Add optional logo URL field
+  logoUrl?: string;
 }
 
 const ExamDetailPage: React.FC<{ params: { id: string } }> = ({ params }) => {

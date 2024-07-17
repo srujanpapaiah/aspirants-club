@@ -1,11 +1,8 @@
-// File: src/app/api/update-exam-info/route.ts
-
 import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import clientPromise from '@/lib/mongodb';
 import admin from 'firebase-admin';
-import { sendEmail, sendSMS } from '@/lib/notifications';
-import { Exam, EditHistoryEntry, Subscription, PushOperator } from '@/types/mongodb';
+import { Exam, EditHistoryEntry, PushOperator } from '@/types/mongodb';
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -24,9 +21,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    // Parse the request body
     const body = await req.json();
-    const { examId, examName, examDate, examDetails, source, username } = body;
+    const {examName, examDate, examDetails, source, username } = body;
 
     if (!examName || !examDate || !examDetails || !source || !username) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -36,7 +32,6 @@ export async function POST(req: Request) {
     const db = client.db('examPrep');
     const exams = db.collection<Exam>('exams');
     const examUpdates = db.collection('examUpdates');
-    const subscriptions = db.collection<Subscription>('subscriptions');
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -80,48 +75,6 @@ export async function POST(req: Request) {
       },
       { upsert: true }
     );
-
-    if (result.modifiedCount > 0 || result.upsertedCount > 0) {
-      const examSubscriptions = await subscriptions.find({ examId }).toArray();
-      
-      // Send FCM notifications
-      const fcmTokens = examSubscriptions
-        .map(sub => sub.fcmToken)
-        .filter((token): token is string => !!token);
-      if (fcmTokens.length > 0) {
-        await admin.messaging().sendMulticast({
-          tokens: fcmTokens,
-          notification: {
-            title: `Update for ${examName}`,
-            body: 'Exam details have been updated.',
-          },
-          data: {
-            examId: examId,
-          },
-        });
-      }
-
-      // Send email notifications
-      for (const sub of examSubscriptions) {
-        if (sub.email) {
-          await sendEmail(
-            sub.email,
-            `Update for ${examName}`,
-            `Exam details for ${examName} have been updated. Please check the app for more information.`
-          );
-        }
-      }
-
-      // Send SMS notifications
-      for (const sub of examSubscriptions) {
-        if (sub.phoneNumber) {
-          await sendSMS(
-            sub.phoneNumber,
-            `Update for ${examName}: Exam details have been updated. Please check the app for more information.`
-          );
-        }
-      }
-    }
 
     await examUpdates.insertOne({
       userId,

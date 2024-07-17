@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     const primaryEmailId = user.primaryEmailAddressId;
     const primaryEmail = emailAddresses.find(email => email.id === primaryEmailId);
     
-    const loginMethod = primaryEmail?.verification?.strategy || 'unknown';
+    const loginMethod = primaryEmail?.verification?.strategy ?? 'unknown';
     const hasPassword = user.passwordEnabled;
 
     console.log('Save User API: Connecting to MongoDB');

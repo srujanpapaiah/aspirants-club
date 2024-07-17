@@ -3,14 +3,13 @@ import { S3 } from 'aws-sdk';
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@clerk/nextjs/server';
 
-// Configure AWS SDK
 const s3 = new S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
 });
 
-export const runtime = 'nodejs'; // or 'edge' if you prefer, but 'nodejs' is likely needed for AWS SDK
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
       ContentType: file.type,
     }).promise();
 
-    // Save resource info to MongoDB
     const client = await clientPromise;
     const db = client.db('examPrep');
     const result = await db.collection('resources').insertOne({
