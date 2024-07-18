@@ -39,7 +39,7 @@ function formatDate(dateString: string | number | Date) {
 
 const ResourceGrid: React.FC<ResourceGridProps> = ({ resources }) => {
   return (
-    <div className="bg-[#1E1E1E] rounded-lg p-6">
+    <div className="bg-[#121717] rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-4">Study Resources</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {resources.map((resource) => (

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import Header from './Header';
 import Sidebar from './Sidebar';
 import ResourceGrid from './ResourceGrid';
@@ -7,7 +9,7 @@ import QuickActions from './QuickActions';
 import UploadResourceModal from './UploadResourceModal';
 import UpdateExamInfoModal from './UpdateExamInfoModal';
 import ExamNamePills from './ExamNamePills';
-
+import LoginPopup from './LoginPopup';
 
 interface Resource {
   _id: string;
@@ -21,13 +23,6 @@ interface Resource {
   summary?: string;
 }
 
-interface ExamDate {
-  _id: string;
-  examName: string;
-  date: string;
-  importance: 'high' | 'medium' | 'low';
-}
-
 interface ExamTitle {
   name: string;
   count: number;
@@ -37,12 +32,17 @@ const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
-  const [examDates, setExamDates] = useState<ExamDate[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUpdateExamModalOpen, setIsUpdateExamModalOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [examNames, setExamNames] = useState<ExamTitle[]>([]);
   const [activeExamName, setActiveExamName] = useState('All');
+  const [isMobile, setIsMobile] = useState(false);
+  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const { isLoaded, userId } = useAuth();
+  const router = useRouter();
 
   const filterResources = useCallback(() => {
     if (activeExamName === 'All') {
@@ -55,8 +55,18 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchResources();
-    fetchExamDates();
     fetchExamNames();
+
+    const checkMobile = () => {
+      const isSmallScreen = window.innerWidth < 1024;
+      setIsMobile(isSmallScreen);
+      setIsSidebarOpen(!isSmallScreen);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -77,25 +87,6 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const fetchExamDates = async () => {
-    try {
-      const response = await fetch('/api/get-exam-dates');
-      if (response.ok) {
-        const data = await response.json();
-        setExamDates(data.examDates);
-      } else {
-        console.error('Failed to fetch exam dates');
-      }
-    } catch (error) {
-      console.error('Error fetching exam dates:', error);
-    }
-  };
-
-  const toggleSidebar = useCallback(() => {
-    setIsSidebarOpen(prevState => !prevState);
-  }, []);
-
-
   const fetchExamNames = async () => {
     try {
       const response = await fetch('/api/get-exam-names');
@@ -111,51 +102,86 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen(prevState => !prevState);
+  }, []);
+
   const handleExamNameChange = (category: string) => {
     setActiveExamName(category);
   };
 
+  const handleQuickAction = (action: 'upload' | 'updateExam') => {
+    if (userId) {
+      if (action === 'upload') {
+        setIsUploadModalOpen(true);
+      } else {
+        setIsUpdateExamModalOpen(true);
+      }
+    } else {
+      setIsLoginPopupOpen(true);
+    }
+  };
+
+  const handleExamClick = (examId: string) => {
+    router.push(`/exam/${examId}`);
+  };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0F0F0F] text-white">
+    <div className="min-h-screen flex flex-col bg-[#040E12] text-white">
       <Header 
         toggleSidebar={toggleSidebar} 
         searchQuery={searchQuery} 
         setSearchQuery={setSearchQuery}
+        isMobile={isMobile}
+        isSidebarOpen={isSidebarOpen}
       />
       <div className="flex-grow flex overflow-hidden">
-        <Sidebar isOpen={isSidebarOpen} />
-        <main className={`flex-grow p-4 md:p-6 overflow-y-auto transition-all duration-300 ease-in-out ${
-          isSidebarOpen ? 'ml-64' : 'ml-16'
-        } lg:ml-64`}>
-
+        <Sidebar isOpen={isSidebarOpen} isMobile={isMobile} />
+        <main className={`flex-grow p-4 md:p-6 overflow-y-auto transition-all duration-300 ease-in-out
+          ${isSidebarOpen && !isMobile ? 'ml-64' : 'ml-0'}
+          ${isMobile ? 'mb-16 pt-20' : 'mt-16'}`}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
               <QuickActions 
-                onUpload={() => setIsUploadModalOpen(true)}
-                onUpdateExam={() => setIsUpdateExamModalOpen(true)}
+                onUpload={() => handleQuickAction('upload')}
+                onUpdateExam={() => handleQuickAction('updateExam')}
+                isLoggedIn={!!userId}
               />
               <ExamNamePills 
-              examNames={examNames}
-              activeExamName={activeExamName} 
-              onExamNameChange={handleExamNameChange} 
-            />
+                examNames={examNames}
+                activeExamName={activeExamName} 
+                onExamNameChange={handleExamNameChange} 
+              />
               <ResourceGrid resources={filteredResources} />
             </div>
             <div className="space-y-6">
-              <ExamTimeline refreshTrigger={0} />
+              <ExamTimeline 
+                refreshTrigger={refreshTrigger}
+              />
             </div>
           </div>
         </main>
       </div>
       {isUploadModalOpen && (
-        <UploadResourceModal onClose={() => setIsUploadModalOpen(false)} onUploadSuccess={() => {
-          fetchResources();
-          fetchExamNames();
-        }} />
+        <UploadResourceModal 
+          onClose={() => setIsUploadModalOpen(false)} 
+          onUploadSuccess={() => {
+            fetchResources();
+            fetchExamNames();
+            setRefreshTrigger(prev => prev + 1);
+          }} 
+        />
       )}
       {isUpdateExamModalOpen && (
-        <UpdateExamInfoModal onClose={() => setIsUpdateExamModalOpen(false)} onUpdateSuccess={fetchExamDates} />
+        <UpdateExamInfoModal 
+          onClose={() => setIsUpdateExamModalOpen(false)} 
+          onUpdateSuccess={() => {
+            setRefreshTrigger(prev => prev + 1);
+          }} 
+        />
+      )}
+      {isLoginPopupOpen && (
+        <LoginPopup onClose={() => setIsLoginPopupOpen(false)} />
       )}
     </div>
   );

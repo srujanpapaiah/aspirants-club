@@ -70,10 +70,10 @@ const ExamTimeline: React.FC<ExamTimelineProps> = ({ refreshTrigger }) => {
   const visibleExams = showAll ? examDates : examDates.slice(0, 3);
 
   return (
-          <div className="bg-[#1E1E1E]/80 backdrop-blur-sm rounded-lg p-6">
+          <div className="bg-[#121717]/80 backdrop-blur-sm rounded-lg p-6">
       <h2 className="text-2xl font-bold mb-6 flex items-center text-[#E0E0E0]">
         <Calendar className="mr-2" size={24} />
-        Exam Timeline
+        Upcoming Exams
       </h2>
       {examDates.length === 0 ? (
         <p className="text-[#A0A0A0]">No upcoming exams found.</p>
@@ -83,8 +83,8 @@ const ExamTimeline: React.FC<ExamTimelineProps> = ({ refreshTrigger }) => {
             <div className="absolute left-[5px] top-0 bottom-0 w-px bg-[#4A90E2]/30"></div>
             {visibleExams.map((exam) => (
               <div key={exam._id} className="mb-4 pl-6 relative">
-                <div className="w-3 h-3 bg-[#4A90E2] rounded-full absolute left-[-1.5px] top-[6px]"></div>
-                <div className="text-[#4A90E2] text-sm font-semibold mb-1">
+                <div className="w-3 h-3 bg-[#1099AE] rounded-full absolute left-[-0px] top-[6px]"></div>
+                <div className="text-[#1099AE] text-sm font-semibold mb-1">
                   {formatDate(exam.examDate)}
                 </div>
                 <div className="bg-[#2C2C2C]/90 rounded-lg p-3 hover:bg-[#3A3A3A]/90 transition-all duration-300 cursor-pointer"

@@ -1,55 +1,114 @@
-import React from 'react';
-import { UserButton } from "@clerk/nextjs";
-import { Menu, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useTheme } from 'next-themes';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { FiMenu, FiSearch, FiX } from 'react-icons/fi';
+import { UserButton, useAuth } from '@clerk/nextjs';
 
-interface HeaderProps {
+const Header = ({ toggleSidebar, searchQuery, setSearchQuery, isMobile, isSidebarOpen }: {
   toggleSidebar: () => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-}
+  isMobile: boolean;
+  isSidebarOpen: boolean;
+}) => {
+  const { theme } = useTheme();
+  const logoSrc = theme === 'dark' ? '/icons/logo-dark.svg' : '/icons/logo-light.svg';
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
 
-const DiscordIcon: React.FC<{ size?: number }> = ({ size = 24 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-  </svg>
-);
+  const handleSignIn = () => {
+    router.push('/sign-in');
+  };
 
-const Header: React.FC<HeaderProps> = ({ toggleSidebar, searchQuery, setSearchQuery }) => {
-  return(
-  <header className="bg-[#0F0F0F] text-white py-2 px-4 flex justify-between items-center sticky top-0 z-50">
-    <div className="flex items-center">
-      <button onClick={toggleSidebar} className="mr-4 p-2 hover:bg-[#2C2C2C] rounded-full transition-colors">
-        <Menu size={24} />
-      </button>
-      <h1 className="text-xl font-bold text-[#4A90E2]">Aspirants Club</h1>
-    </div>
-    <div className="flex-grow max-w-2xl mx-4">
-      <div className="relative">
-        <input
-          type="text"
-          placeholder="Search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-[#1E1E1E] text-[#E0E0E0] border border-[#303030] rounded-full py-2 px-4 pl-10 focus:outline-none focus:ring-2 focus:ring-[#4A90E2]"
-        />
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <Search className="h-5 w-5 text-[#4A90E2]" />
+  return (
+    <>
+      {isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white dark:bg-[#07080B] py-2 px-4 flex items-center shadow-md">
+          <h1 className="text-black dark:text-white font-semibold text-lg">Aspirants Club</h1>
         </div>
-      </div>
-    </div>
-    <div className="flex items-center space-x-8">
-      <a
-        href="https://discord.gg/DRtueZpH4F"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-[#4A90E2] hover:text-[#3A7FCF] transition-colors"
-      >
-        
-        <DiscordIcon size={24} />
-      </a>
-      <UserButton />
-    </div>
-  </header>
+      )}
+      <nav className={`fixed ${isMobile ? 'bottom-0' : 'top-0'} left-0 right-0 z-50 flex items-center justify-between bg-white py-4 px-4 text-white dark:border-t dark:border-t-[#131620] dark:bg-[#07080B] transition-all duration-300 ease-in-out`}
+           style={{ boxShadow: isMobile ? '0 -4px 6px -1px rgb(0 0 0 / 0.1), 0 -2px 4px -2px rgb(0 0 0 / 0.1)' : '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
+        <div className="flex items-center space-x-4">
+          <button onClick={toggleSidebar} className="text-gray-400 hover:text-white z-50">
+            <FiMenu size={32} className="text-black dark:text-white" />
+          </button>
+          {!isMobile && (
+            <div className="text-black dark:text-white font-semibold text-lg">
+              Aspirants Club
+            </div>
+          )}
+        </div>
+        {isMobile ? (
+          <div className="flex items-center space-x-4">
+            <button onClick={() => setIsSearchOpen(!isSearchOpen)} className="text-gray-400 hover:text-white">
+              <FiSearch size={24} className="text-black dark:text-white" />
+            </button>
+            {isSignedIn ? (
+              <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 rounded-full", userButtonTrigger: "focus:shadow-none" } }} />
+            ) : (
+              <button
+                onClick={handleSignIn}
+                className="px-4 py-2 rounded-full bg-[#121717] border-2 border-[#1AA38C] text-white text-sm font-medium hover:bg-[#1AA38C] transition-colors duration-300"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className="mx-4 flex max-w-xl flex-1 items-center">
+              <div className="relative w-full">
+                <input 
+                  type="text" 
+                  className="w-full rounded-md bg-[#F1F6FF] px-4 py-1.5 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-gray-700 dark:bg-[#0F1618] dark:text-white" 
+                  placeholder="Search.." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400" size={16} />
+              </div>
+            </div>
+            <div className="flex items-center space-x-6">
+              <div className="relative flex items-center">
+                {isSignedIn ? (
+                  <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 rounded-full", userButtonTrigger: "focus:shadow-none" } }} />
+                ) : (
+                  <button
+                    onClick={handleSignIn}
+                    className="px-4 py-2 rounded-full bg-[#121717] border-2 border-[#1AA38C] text-white text-sm font-medium hover:bg-[#1AA38C] transition-colors duration-300"
+                  >
+                    Sign In
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+        {isMobile && isSearchOpen && (
+          <div className="absolute bottom-full left-0 right-0 bg-white dark:bg-[#07080B] p-4">
+            <div className="relative w-full">
+              <input 
+                type="text" 
+                className="w-full rounded-md bg-[#F1F6FF] px-4 py-1.5 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-gray-700 dark:bg-[#0F1618] dark:text-white" 
+                placeholder="Search.." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400" size={16} />
+              <button 
+                onClick={() => setIsSearchOpen(false)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-400"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+    </>
   );
 };
 
