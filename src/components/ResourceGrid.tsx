@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { FileText, Download, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -52,11 +53,17 @@ const getFileType = (fileName: string) => {
 };
 
 const ResourceGrid: React.FC<ResourceGridProps> = ({ resources }) => {
+  const router = useRouter();
+
   const sortedResources = useMemo(() => {
     return [...resources].sort((a, b) => 
       new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
     );
   }, [resources]);
+
+  const handlePreview = (url: string) => {
+    router.push(`/pdfs?pdfUrl=${encodeURIComponent(url)}`);
+  };
 
   return (
     <div className="bg-[#121717] rounded-lg p-6">
@@ -91,7 +98,10 @@ const ResourceGrid: React.FC<ResourceGridProps> = ({ resources }) => {
                     <Download size={16} className="mr-1" />
                     Download
                   </a>
-                  <button className="text-[#66BB6A] hover:text-[#5CAD60] flex items-center text-sm">
+                  <button 
+                    onClick={() => handlePreview(resource.s3Url)}
+                    className="text-[#66BB6A] hover:text-[#5CAD60] flex items-center text-sm"
+                  >
                     <ExternalLink size={16} className="mr-1" />
                     Preview
                   </button>
