@@ -7,7 +7,7 @@ import { Exam } from '@/types/mongodb';
 export async function GET() {
   try {
     const client = await clientPromise;
-    const db = client.db("examPrep");
+    const db = client.db(process.env.MONGODB_DB);
     
     const exams = await db.collection<Exam>('exams').find({}).toArray();
     

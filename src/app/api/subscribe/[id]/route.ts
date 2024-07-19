@@ -14,7 +14,7 @@ export async function GET(
 
   try {
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const subscriptions = db.collection('subscriptions');
 
     const subscription = await subscriptions.findOne({ userId, examId: params.id });
@@ -40,7 +40,7 @@ export async function POST(
     const { token } = await request.json();
 
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const subscriptions = db.collection('subscriptions');
 
     await subscriptions.updateOne(

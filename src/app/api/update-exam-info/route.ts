@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     }
 
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const exams = db.collection<Exam>('exams');
     const examUpdates = db.collection('examUpdates');
 

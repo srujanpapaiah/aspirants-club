@@ -151,7 +151,6 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
         searchQuery=""
         setSearchQuery={() => {}}
         isMobile={isMobile}
-        isSidebarOpen={isSidebarOpen}
       />
       <div className="flex-grow flex overflow-hidden">
         <Sidebar isOpen={isSidebarOpen} isMobile={isMobile} />

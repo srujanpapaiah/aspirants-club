@@ -10,7 +10,7 @@ export async function GET(_req: Request, _res: Response) {
 
   try {
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const examUpdates = db.collection('examUpdates');
 
     const today = new Date();

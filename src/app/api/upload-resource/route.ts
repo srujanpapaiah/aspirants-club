@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }).promise();
 
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const result = await db.collection('resources').insertOne({
       userId,
       userName,

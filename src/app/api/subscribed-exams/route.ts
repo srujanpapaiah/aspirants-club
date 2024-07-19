@@ -12,7 +12,7 @@ export async function GET() {
 
   try {
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const subscriptions = db.collection('subscriptions');
 
     const userSubscriptions = await subscriptions.find({ userId }).toArray();

@@ -60,7 +60,7 @@ function getSortValue(examDate: any) {
 export async function GET(req: NextRequest) {
   try {
     const client = await clientPromise;
-    const database = client.db('examPrep');
+    const database = client.db(process.env.MONGODB_DB);
     const exams = database.collection('exams');
 
     const currentDate = new Date();

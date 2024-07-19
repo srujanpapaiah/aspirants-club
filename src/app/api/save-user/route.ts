@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     console.log('Save User API: Connecting to MongoDB');
     const client = await clientPromise;
-    const database = client.db('examPrep');
+    const database = client.db(process.env.MONGODB_DB);
     const users = database.collection('users');
 
     const userData = {

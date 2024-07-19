@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const exams = db.collection('exams');
 
     const exam = await exams.findOne({ _id: new ObjectId(params.id) });
