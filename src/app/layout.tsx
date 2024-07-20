@@ -28,7 +28,6 @@ export default function RootLayout({
       <html lang="en">
       <head>
           <link rel="icon" href="/favicon.ico" sizes="any" />
-          <link rel="apple-touch-icon" href="/icon-192x192.png" />
         </head>
         <body className={inter.className}>
           <UserDataSaver />

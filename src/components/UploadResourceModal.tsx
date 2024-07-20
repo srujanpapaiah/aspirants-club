@@ -10,9 +10,6 @@ interface UploadModalProps {
 
 const popularExams = [
   "UPSC Civil Services",
-  "IAS",
-  "IPS",
-  "IFS",
   "SSC CGL",
   "SSC CHSL",
   "IBPS PO",
@@ -26,7 +23,6 @@ const popularExams = [
   "NDA",
   "CDS",
   "CAPF",
-  "State PSC",
   "Other"
 ];
 

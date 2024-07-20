@@ -203,7 +203,7 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
             
             <div className="mb-4">
               <div className="flex border-b border-gray-700">
-                {['overview', 'preparation', 'community', 'resources'].map((tab) => (
+                {['overview', 'Notification', 'Resources', 'News', 'Toppers', 'Documents'].map((tab) => (
                   <button
                     key={tab}
                     className={`px-4 py-2 font-medium ${
@@ -240,7 +240,7 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
                 </div>
               )}
               
-              {activeTab === 'preparation' && (
+              {activeTab === 'Notification' && (
                 <div>
                   <h2 className="text-xl font-semibold mb-4">Exam Preparation</h2>
                   <div className="space-y-4">
@@ -263,27 +263,8 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
                   </div>
                 </div>
               )}
-              
-              {activeTab === 'community' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Community and Support</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <Users className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Connect with 5,000+ exam aspirants</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Video className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Next Expert Q&A: July 30, 2024</span>
-                    </div>
-                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Join Community Forum
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {activeTab === 'resources' && (
+
+{activeTab === 'Resources' && (
                 <div>
                   <h2 className="text-xl font-semibold mb-4">Additional Resources</h2>
                   <div className="space-y-4">
@@ -305,6 +286,64 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
                   </div>
                 </div>
               )}
+              
+              {activeTab === 'News' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Community and Support</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <Users className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Connect with 5,000+ exam aspirants</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Video className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Next Expert Q&A: July 30, 2024</span>
+                    </div>
+                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
+                      Join Community Forum
+                    </button>
+                  </div>
+                </div>
+              )}
+
+{activeTab === 'Toppers' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Community and Support</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <Users className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Connect with 5,000+ exam aspirants</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Video className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Next Expert Q&A: July 30, 2024</span>
+                    </div>
+                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
+                      Join Community Forum
+                    </button>
+                  </div>
+                </div>
+              )}
+
+{activeTab === 'Documents' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Community and Support</h2>
+                  <div className="space-y-4">
+                    <div className="flex items-center">
+                      <Users className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Connect with 5,000+ exam aspirants</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Video className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Next Expert Q&A: July 30, 2024</span>
+                    </div>
+                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
+                      Join Community Forum
+                    </button>
+                  </div>
+                </div>
+              )}
+
             </div>
           </div>
         </main>

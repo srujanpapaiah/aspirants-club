@@ -8,9 +8,21 @@ interface UpdateExamInfoModalProps {
 }
 
 const popularExams = [
-  "UPSC Civil Services", "SSC CGL", "SSC CHSL",
-  "IBPS PO", "IBPS Clerk", "RBI Grade B", "SBI PO", "Railway RRB",
-  "GATE", "UGC NET", "CTET", "NDA", "CDS", "CAPF", "State PSC", "Other"
+  "UPSC Civil Services",
+  "SSC CGL",
+  "SSC CHSL",
+  "IBPS PO",
+  "IBPS Clerk",
+  "RBI Grade B",
+  "SBI PO",
+  "Railway RRB",
+  "GATE",
+  "UGC NET",
+  "CTET",
+  "NDA",
+  "CDS",
+  "CAPF",
+  "Other"
 ];
 
 const months = [

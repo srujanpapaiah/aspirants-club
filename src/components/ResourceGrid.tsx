@@ -22,11 +22,9 @@ interface ResourceGridProps {
 const getExamLogo = (examName: string) => {
   const examLogos: { [key: string]: string } = {
     'UPSC': '/logos/upsc-logo.png',
-    'GATE': '/logos/gate-logo.png',
-    'CAT': '/logos/cat-logo.png',
-    'NEET': '/logos/neet-logo.png',
-    'JEE': '/logos/jee-logo.png',
-    'RBI Grade B': '/logos/rbi-logo.png',
+    'GATE': '/logos/gate_iitkgp.jpeg',
+    'RBI Grade B': '/logos/rbi.jpeg',
+    'SSC CGL': '/logos/ssc.jpeg',
     // Add more exams here
   };
 
@@ -71,7 +69,7 @@ const ResourceGrid: React.FC<ResourceGridProps> = ({ resources }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {sortedResources.map((resource) => (
           <div key={resource._id} className="bg-[#2C2C2C] rounded-lg overflow-hidden flex flex-col">
-            <div className="h-40 bg-gradient-to-br from-[#4A90E2] to-[#1AA38C] flex items-center justify-center relative">
+            <div className="h-35 bg-gradient-to-br from-[#4A90E2] to-[#1AA38C] flex items-center justify-center relative">
               <img 
                 src={getExamLogo(resource.examName)} 
                 alt={`${resource.examName} logo`}
@@ -84,12 +82,12 @@ const ResourceGrid: React.FC<ResourceGridProps> = ({ resources }) => {
             <div className="p-4 flex flex-col flex-grow">
               <h3 className="text-lg font-semibold mb-2 truncate">{resource.examTitle}</h3>
               <p className="text-sm text-[#1099ae] mb-1">{resource.examName}</p>
-              <p className="text-xs text-gray-500 mb-2">{resource.examCategory}</p>
+              <p className="text-xs text-gray-500  mt-2">{resource.examCategory}</p>
               <div className="mt-auto">
-                <p className="text-xs text-gray-500 mb-2">
+                {/* <p className="text-xs text-gray-500 mb-2">
                  {resource.userName} {formatDistanceToNow(new Date(resource.uploadDate), { addSuffix: true })}
-                </p>
-                <div className="flex justify-between">
+                </p> */}
+                <div className="flex justify-between mt-6">
                   <a 
                     href={resource.s3Url} 
                     download 
