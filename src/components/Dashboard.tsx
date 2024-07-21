@@ -46,10 +46,17 @@ const Dashboard: React.FC = () => {
   const [isQuickActionsModalOpen, setIsQuickActionsModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [subscribedExams, setSubscribedExams] = useState([]);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 
   const { isLoaded, userId } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (isLoaded) {
+      setIsAuthenticated(!!userId);
+    }
+  }, [isLoaded, userId]);
 
   const filterResources = useCallback(() => {
     if (activeExamName === 'All') {
@@ -158,11 +165,8 @@ const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-[#040E12] text-white">
       <Header 
-        searchQuery={searchQuery} 
-        setSearchQuery={setSearchQuery}
         isMobile={isMobile}
-          toggleSidebar={toggleSidebar}
-
+        toggleSidebar={toggleSidebar}
       />
       <div className="flex-grow flex overflow-hidden">
         {!isMobile && <Sidebar isOpen={isSidebarOpen} isMobile={isMobile} />}
@@ -171,16 +175,13 @@ const Dashboard: React.FC = () => {
           ${isMobile ? 'mb-16 pt-20' : 'mt-16'}`}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {!isMobile && (
-                <QuickActions 
-                  onUpload={() => handleQuickAction('upload')}
-                  onUpdateExam={() => handleQuickAction('updateExam')}
-                  isLoggedIn={!!userId}
-                />
-              )}
+              
               {isMobile && (
-                <ExamCountdown subscribedExams={subscribedExams} />
-              )}
+                <ExamCountdown 
+                  subscribedExams={subscribedExams} 
+                  isAuthenticated={isAuthenticated} 
+                  userId={userId as string}
+                />              )}
               <ExamNamePills 
                 examNames={examNames}
                 activeExamName={activeExamName} 
@@ -193,15 +194,17 @@ const Dashboard: React.FC = () => {
                 <ExamTimeline 
                   refreshTrigger={refreshTrigger}
                 />
-                <ExamCountdown subscribedExams={subscribedExams} />
-              </div>
+<ExamCountdown 
+                  subscribedExams={subscribedExams} 
+                  isAuthenticated={isAuthenticated} 
+                  userId={userId as string}
+                />              </div>
             )}
           </div>
         </main>
       </div>
       {isMobile && (
         <MobileNavbar 
-          onSearchClick={handleSearchClick}
           onQuickActionsClick={handleQuickActionsClick}
           onTimelineClick={handleTimelineClick}
         />
@@ -249,7 +252,7 @@ const Dashboard: React.FC = () => {
           <div className="bg-white dark:bg-[#07080B] p-4 rounded-lg w-full max-w-md">
             <QuickActions 
               onUpload={() => handleQuickAction('upload')}
-              onUpdateExam={() => handleQuickAction('updateExam')}
+              // onUpdateExam={() => handleQuickAction('updateExam')}
               isLoggedIn={!!userId}
             />
             <button 

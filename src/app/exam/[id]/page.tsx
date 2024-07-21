@@ -6,15 +6,14 @@ import { useRouter } from "next/navigation";
 import ExamDetailComponent from "../../../components/ExamDetail";
 import Header from "../../../components/Header";
 import MobileNavbar from "../../../components/MobileNavbar";
+import SearchComponent from "../../../components/Search";
 
 export default function ExamDetailPage({ params }: { params: { id: string } }) {
   const { isLoaded, userId } = useAuth();
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
 
   useEffect(() => {
     const checkMobile = () => {
@@ -28,7 +27,11 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   }, []);
 
   const handleSearchClick = () => {
-    setIsSearchModalOpen(true);
+    setIsSearchOpen(true);
+  };
+
+  const handleCloseSearch = () => {
+    setIsSearchOpen(false);
   };
 
   const toggleSidebar = useCallback(() => {
@@ -56,37 +59,29 @@ export default function ExamDetailPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen flex flex-col bg-[#040E12] text-white">
       <Header 
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
         isMobile={isMobile}
         toggleSidebar={toggleSidebar}
       />
       <div className={`flex-grow ${isMobile ? 'mb-16' : ''}`}>
+        {!isMobile && (
+          <div className="mb-4 px-4 md:px-6">
+            <SearchComponent isMobile={false} isOpen={true} onClose={() => {}} />
+          </div>
+        )}
         <ExamDetailComponent examId={params.id} />
       </div>
       {isMobile && (
-        <MobileNavbar 
-          onSearchClick={handleSearchClick}
-          onQuickActionsClick={handleQuickActionsClick}
-          onTimelineClick={handleTimelineClick}
-        />
-      )}
-      {isMobile && isSearchModalOpen && (
-        <div className="fixed inset-x-0 top-0 bg-white dark:bg-[#07080B] z-50 p-4">
-          <input 
-            type="text" 
-            className="w-full rounded-md bg-[#F1F6FF] px-4 py-2 text-black focus:outline-none focus:ring-1 focus:ring-gray-700 dark:bg-[#0F1618] dark:text-white" 
-            placeholder="Search.." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+        <>
+          <MobileNavbar 
+            onQuickActionsClick={handleQuickActionsClick}
+            onTimelineClick={handleTimelineClick}
           />
-          <button 
-            onClick={() => setIsSearchModalOpen(false)}
-            className="mt-4 w-full bg-[#1AA38C] text-white py-2 rounded-md"
-          >
-            Close
-          </button>
-        </div>
+          <SearchComponent 
+            isMobile={true} 
+            isOpen={isSearchOpen} 
+            onClose={handleCloseSearch} 
+          />
+        </>
       )}
     </div>
   );

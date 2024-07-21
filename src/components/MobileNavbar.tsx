@@ -1,23 +1,27 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { FiHome, FiSearch, FiPlusCircle, FiClock, FiBookOpen, FiX } from 'react-icons/fi';
+import SearchComponent from './Search';
 
 interface MobileNavbarProps {
-  onSearchClick: () => void;
   onQuickActionsClick: () => void;
   onTimelineClick: () => void;
 }
 
 const MobileNavbar: React.FC<MobileNavbarProps> = ({
-  onSearchClick,
   onQuickActionsClick,
   onTimelineClick,
 }) => {
   const router = useRouter();
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const toggleLibrary = () => {
     setIsLibraryOpen(!isLibraryOpen);
+  };
+
+  const toggleSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
   };
 
   const DiscordIcon = () => (
@@ -40,7 +44,7 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({
           <FiHome size={24} className="text-gray-600 dark:text-gray-300" />
           <span className="text-xs mt-1 text-gray-600 dark:text-gray-300">Home</span>
         </button>
-        <button onClick={onSearchClick} className="flex flex-col items-center">
+        <button onClick={toggleSearch} className="flex flex-col items-center">
           <FiSearch size={24} className="text-gray-600 dark:text-gray-300" />
           <span className="text-xs mt-1 text-gray-600 dark:text-gray-300">Search</span>
         </button>
@@ -58,6 +62,19 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({
         </button>
       </nav>
 
+      {isSearchOpen && (
+        <div className="fixed inset-x-0 top-0 bottom-16 bg-white dark:bg-[#07080B] z-50 flex flex-col">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <SearchComponent isMobile={true}
+  isOpen={isSearchOpen}
+  onClose={() => setIsSearchOpen(false)}/>
+          </div>
+          <div className="flex-grow overflow-y-auto">
+            {/* Search results will be displayed here */}
+          </div>
+        </div>
+      )}
+
       {isLibraryOpen && (
         <div className="fixed inset-0 bg-white dark:bg-[#07080B] z-50 overflow-y-auto">
           <div className="p-4">
@@ -65,12 +82,10 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({
               <FiX size={24} />
             </button>
             <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Library</h2>
-            {/* Add your sidebar items here */}
             <div className="space-y-4">
               <a href="#" className="block text-gray-600 dark:text-gray-300">Item 1</a>
               <a href="#" className="block text-gray-600 dark:text-gray-300">Item 2</a>
               <a href="#" className="block text-gray-600 dark:text-gray-300">Item 3</a>
-              {/* Add more items as needed */}
             </div>
             <div className="mt-8">
               <a href="https://discord.gg/DRtueZpH4F" target="_blank" rel="noreferrer" className="flex items-center text-gray-600 dark:text-gray-300">

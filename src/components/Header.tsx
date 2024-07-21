@@ -1,26 +1,85 @@
 import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { useRouter } from 'next/navigation';
-import { FiSearch, FiX, FiMenu } from 'react-icons/fi';
+import { FiMenu } from 'react-icons/fi';
 import { UserButton, useAuth } from '@clerk/nextjs';
+import SearchComponent from './Search';
+import QuickActions from './QuickActions';
+import UploadResourceModal from './UploadResourceModal';
 
 interface HeaderProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
   isMobile: boolean;
   toggleSidebar: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ searchQuery, setSearchQuery, isMobile, toggleSidebar }) => {
+interface Resource {
+  _id: string;
+  examTitle: string;
+  examName: string;
+  examCategory: string;
+  s3Url: string;
+  uploadDate: string;
+  userName: string;
+  fileName: string;
+  summary?: string;
+}
+
+interface ExamTitle {
+  name: string;
+  count: number;
+}
+
+const Header: React.FC<HeaderProps> = ({ isMobile, toggleSidebar }) => {
   const { theme } = useTheme();
   const logoSrc = theme === 'dark' ? '/icons/logo-dark.svg' : '/icons/logo-light.svg';
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const { isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, userId } = useAuth();
   const router = useRouter();
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [examNames, setExamNames] = useState<ExamTitle[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    if (isLoaded) {
+      setIsAuthenticated(!!userId);
+    }
+  }, [isLoaded, userId]);
+
 
   const handleSignIn = () => {
     router.push('/sign-in');
   };
+
+  const fetchResources = async () => {
+    try {
+      const response = await fetch('/api/get-resources');
+      if (response.ok) {
+        const data = await response.json();
+        setResources(data.resources);
+      } else {
+        console.error('Failed to fetch resources');
+      }
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+    }
+  };
+
+  const fetchExamNames = async () => {
+    try {
+      const response = await fetch('/api/get-exam-names');
+      if (response.ok) {
+        const data = await response.json();
+        setExamNames(data.examNames);
+      } else {
+        console.error('Failed to fetch categories');
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
 
   const DiscordIcon = () => (
     <svg width="24" height="24" viewBox="0 0 71 55" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -35,11 +94,20 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, setSearchQuery, isMobile, 
     </svg>
   );
 
+  const handleQuickAction = (action: 'upload') => {
+    if (userId) {
+      if (action === 'upload') {
+        setIsUploadModalOpen(true);
+    } else {
+      setIsLoginPopupOpen(true);
+    }
+  };
+  }
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between bg-white py-4 px-4 text-white dark:bg-[#07080B] transition-all duration-300 ease-in-out`}
          style={{ boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' }}>
       <div className="flex items-center space-x-4">
-        <button onClick={toggleSidebar} className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+        <button onClick={toggleSidebar} className={`text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white ${isMobile ? 'hidden' : 'flex'}`}>
           <FiMenu size={24} />
         </button>
         <div className="text-black dark:text-white font-semibold text-lg">
@@ -47,26 +115,26 @@ const Header: React.FC<HeaderProps> = ({ searchQuery, setSearchQuery, isMobile, 
         </div>
       </div>
       <div className={`flex-grow mx-4 ${isMobile ? 'hidden' : 'flex'} items-center justify-center`}>
-        <div className={`relative w-full max-w-xl ${isSearchFocused ? 'z-50' : ''}`}>
-          <input 
-            type="text" 
-            className="w-full rounded-md bg-[#F1F6FF] px-4 py-1.5 pl-10 text-black focus:outline-none focus:ring-1 focus:ring-gray-700 dark:bg-[#0F1618] dark:text-white" 
-            placeholder="Search.." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => setIsSearchFocused(false)}
-          />
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 transform text-gray-400" size={16} />
-          {isSearchFocused && searchQuery && (
-            <div className="absolute w-full bg-white dark:bg-[#0F1618] mt-1 rounded-md shadow-lg">
-              {/* Search results go here */}
-              <div className="p-2">Search results...</div>
-            </div>
-          )}
-        </div>
+        <SearchComponent isMobile={false}/>
       </div>
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-10">
+      {!isMobile && (
+                <QuickActions 
+                  onUpload={() => handleQuickAction('upload')}
+                  // onUpdateExam={() => handleQuickAction('updateExam')}
+                  isLoggedIn={!!userId}
+                />
+              )}
+              {isUploadModalOpen && (
+        <UploadResourceModal 
+          onClose={() => setIsUploadModalOpen(false)} 
+          onUploadSuccess={() => {
+            fetchResources();
+            fetchExamNames();
+            setRefreshTrigger(prev => prev + 1);
+          }} 
+        />
+      )}
         {!isMobile && (
           <div className="text-white mr-4">
             <a href="https://discord.gg/DRtueZpH4F" target="_blank" rel="noreferrer">

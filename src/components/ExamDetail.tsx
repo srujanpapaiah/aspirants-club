@@ -35,7 +35,9 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
     }
 
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+      const isSmallScreen = window.innerWidth < 1024;
+      setIsMobile(isSmallScreen);
+      setIsSidebarOpen(!isSmallScreen);
     };
 
     checkMobile();
@@ -148,8 +150,6 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
     <div className="min-h-screen flex flex-col bg-[#040E12] text-white">
       <Header 
         toggleSidebar={toggleSidebar} 
-        searchQuery=""
-        setSearchQuery={() => {}}
         isMobile={isMobile}
       />
       <div className="flex-grow flex overflow-hidden">
