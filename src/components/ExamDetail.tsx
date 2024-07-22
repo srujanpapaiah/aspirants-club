@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { useUser } from "@clerk/nextjs";
-import { Calendar, Book, Link as LinkIcon, ArrowLeft, Bell, BookOpen, Users, FileText, PenTool, Globe, Newspaper, Briefcase, Video, ExternalLink } from 'lucide-react';
+import { Calendar, Book, Link as LinkIcon, ArrowLeft, Bell, BookOpen, Users, FileText, PenTool, Globe, Newspaper, Briefcase, Video, ExternalLink, Youtube } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LoginPopup from './LoginPopup';
 
@@ -14,6 +15,14 @@ interface ExamDetail {
   examDetails: string;
   source: string;
   logoUrl?: string;
+  youtubeChannels?: string[];
+}
+
+interface YouTubeChannelInfo {
+  id: string;
+  name: string;
+  thumbnailUrl: string;
+  subscriberCount: string;
 }
 
 const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
@@ -25,6 +34,7 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
   const [isMobile, setIsMobile] = useState(false);
   const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [channelInfo, setChannelInfo] = useState<YouTubeChannelInfo[]>([]);
   const { user } = useUser();
   const router = useRouter();
 
@@ -45,6 +55,12 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
 
     return () => window.removeEventListener('resize', checkMobile);
   }, [examId, user]);
+
+  useEffect(() => {
+    if (exam?.youtubeChannels) {
+      fetchChannelInfo(exam.youtubeChannels);
+    }
+  }, [exam]);
 
   const fetchExamDetail = async (examId: string) => {
     setIsLoading(true);
@@ -126,6 +142,35 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
     setIsSidebarOpen(prevState => !prevState);
   }, []);
 
+  const getChannelId = (url: string) => {
+    const match = url.match(/youtube\.com\/@?([\w-]+)/);
+    return match ? match[1] : null;
+  };
+
+  const fetchChannelInfo = async (channelUrls: string[]) => {
+    const channelInfoPromises = channelUrls.map(async (url) => {
+      const channelId = getChannelId(url);
+      if (!channelId) return null;
+
+      // In a real application, you would call your backend API here
+      // which would then use the YouTube Data API to fetch channel info
+      // For this example, we'll simulate the API call
+      const mockApiCall = async () => {
+        return {
+          id: channelId,
+          name: `Channel ${channelId}`,
+          thumbnailUrl: `/placeholder-thumbnail.jpg`,
+          subscriberCount: `${Math.floor(Math.random() * 1000000)} subscribers`
+        };
+      };
+
+      return await mockApiCall();
+    });
+
+    const channelInfoResults = await Promise.all(channelInfoPromises);
+    setChannelInfo(channelInfoResults.filter((info): info is YouTubeChannelInfo => info !== null));
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-[#121717]">
@@ -165,48 +210,47 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
             Back to Timeline
           </button>
           <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden">
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                {exam.logoUrl ? (
-                  <img src={exam.logoUrl} alt={`${exam.examName} logo`} className="h-16 w-16 object-contain rounded-full border-2 border-[#1AA38C] mr-4" />
-                ) : (
-                  <div className="h-16 w-16 rounded-full border-2 border-[#1AA38C] mr-4 flex items-center justify-center bg-[#1E2A2F]">
-                    <BookOpen size={32} className="text-[#1AA38C]" />
+            <div className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  {exam.logoUrl ? (
+                    <img src={exam.logoUrl} alt={`${exam.examName} logo`} className="h-16 w-16 object-contain rounded-full border-2 border-[#1AA38C] mr-4" />
+                  ) : (
+                    <div className="h-16 w-16 rounded-full border-2 border-[#1AA38C] mr-4 flex items-center justify-center bg-[#1E2A2F]">
+                      <BookOpen size={32} className="text-[#1AA38C]" />
+                    </div>
+                  )}
+                  <div>
+                    <h1 className="text-2xl font-bold text-[#FFFFFF]">{exam.examName}</h1>
+                    <a 
+                      href={exam.source} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm text-[#4A90E2] hover:text-[#3A7FCF] transition-colors mt-1 flex items-center"
+                    >
+                      Official Website
+                      <ExternalLink size={12} className="ml-1" />
+                    </a>
                   </div>
-                )}
-               <div>
-                  <h1 className="text-2xl font-bold text-[#FFFFFF]">{exam.examName}</h1>
-                  <a 
-                    href={exam.source} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-sm text-[#4A90E2] hover:text-[#3A7FCF] transition-colors mt-1 flex items-center"
-                  >
-                    Official Website
-                    <ExternalLink size={12} className="ml-1" />
-                  </a>
                 </div>
+                <button
+                  onClick={handleSubscribe}
+                  className={`px-4 py-2 rounded-full flex items-center ${
+                    isSubscribed ? 'bg-[#1AA38C]' : 'bg-[#121717] border-2 border-[#1AA38C]'
+                  }`}
+                >
+                  <Bell size={16} className="mr-2" />
+                  {isSubscribed ? 'Subscribed' : 'Subscribe for Updates'}
+                </button>
               </div>
-              <button
-                onClick={handleSubscribe}
-                className={`px-4 py-2 rounded-full flex items-center ${
-                  isSubscribed ? 'bg-[#1AA38C]' : 'bg-[#121717] border-2 border-[#1AA38C]'
-                }`}
-              >
-                <Bell size={16} className="mr-2" />
-                {isSubscribed ? 'Subscribed' : 'Subscribe for Updates'}
-              </button>
             </div>
-          </div>
-        
             
             <div className="mb-4">
-              <div className="flex border-b border-gray-700">
-                {['overview', 'Notification', 'Resources', 'News', 'Toppers', 'Documents'].map((tab) => (
+              <div className="flex border-b border-gray-700 overflow-x-auto">
+                {['overview', 'Notification', 'Resources', 'News', 'Toppers', 'Documents', 'YouTube'].map((tab) => (
                   <button
                     key={tab}
-                    className={`px-4 py-2 font-medium ${
+                    className={`px-4 py-2 font-medium whitespace-nowrap ${
                       activeTab === tab ? 'border-b-2 border-[#4A90E2] text-[#4A90E2]' : 'text-gray-400'
                     }`}
                     onClick={() => setActiveTab(tab)}
@@ -264,7 +308,7 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
                 </div>
               )}
 
-{activeTab === 'Resources' && (
+              {activeTab === 'Resources' && (
                 <div>
                   <h2 className="text-xl font-semibold mb-4">Additional Resources</h2>
                   <div className="space-y-4">
@@ -289,61 +333,104 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
               
               {activeTab === 'News' && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">Community and Support</h2>
+                  <h2 className="text-xl font-semibold mb-4">Latest News</h2>
                   <div className="space-y-4">
-                    <div className="flex items-center">
-                      <Users className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Connect with 5,000+ exam aspirants</span>
+                  <div className="flex items-center">
+                      <Newspaper className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Exam Date Announced</span>
                     </div>
                     <div className="flex items-center">
-                      <Video className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Next Expert Q&A: July 30, 2024</span>
+                      <Newspaper className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>New Syllabus Released</span>
                     </div>
                     <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Join Community Forum
+                      Read More News
                     </button>
                   </div>
                 </div>
               )}
 
-{activeTab === 'Toppers' && (
+              {activeTab === 'Toppers' && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">Community and Support</h2>
+                  <h2 className="text-xl font-semibold mb-4">Top Performers</h2>
                   <div className="space-y-4">
                     <div className="flex items-center">
                       <Users className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Connect with 5,000+ exam aspirants</span>
+                      <span>View success stories of previous exam toppers</span>
                     </div>
                     <div className="flex items-center">
                       <Video className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Next Expert Q&A: July 30, 2024</span>
+                      <span>Topper Interviews: Learn from the best</span>
                     </div>
                     <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Join Community Forum
+                      Explore Topper Insights
                     </button>
                   </div>
                 </div>
               )}
 
-{activeTab === 'Documents' && (
+              {activeTab === 'Documents' && (
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">Community and Support</h2>
+                  <h2 className="text-xl font-semibold mb-4">Important Documents</h2>
                   <div className="space-y-4">
                     <div className="flex items-center">
-                      <Users className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Connect with 5,000+ exam aspirants</span>
+                      <FileText className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Exam Syllabus</span>
                     </div>
                     <div className="flex items-center">
-                      <Video className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Next Expert Q&A: July 30, 2024</span>
+                      <FileText className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Previous Year Question Papers</span>
+                    </div>
+                    <div className="flex items-center">
+                      <FileText className="mr-2 text-[#4A90E2]" size={20} />
+                      <span>Study Material</span>
                     </div>
                     <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Join Community Forum
+                      Download Documents
                     </button>
                   </div>
                 </div>
               )}
 
+              {activeTab === 'YouTube' && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-6">Recommended YouTube Channels</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {channelInfo.map((channel) => (
+                      <div key={channel.id} className="bg-[#121717] rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
+                        <div className="relative">
+                          <Image
+                            src={channel.thumbnailUrl}
+                            alt={`${channel.name} thumbnail`}
+                            width={320}
+                            height={180}
+                            layout="responsive"
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
+                            <a
+                              href={`https://www.youtube.com/channel/${channel.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-red-600 text-white py-2 px-4 rounded-full flex items-center hover:bg-red-700 transition-colors duration-300"
+                            >
+                              <Youtube size={20} className="mr-2" />
+                              Visit Channel
+                            </a>
+                          </div>
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-semibold text-lg mb-2 truncate">{channel.name}</h3>
+                          <p className="text-gray-400 flex items-center">
+                            <Users size={16} className="mr-2" />
+                            {channel.subscriberCount}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </main>

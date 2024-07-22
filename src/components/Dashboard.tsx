@@ -36,7 +36,7 @@ const Dashboard: React.FC = () => {
   const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isUpdateExamModalOpen, setIsUpdateExamModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [examNames, setExamNames] = useState<ExamTitle[]>([]);
   const [activeExamName, setActiveExamName] = useState('All');
   const [isMobile, setIsMobile] = useState(false);

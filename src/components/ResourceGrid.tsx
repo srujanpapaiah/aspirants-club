@@ -25,6 +25,7 @@ const getExamLogo = (examName: string) => {
     'GATE': '/logos/gate_iitkgp.jpeg',
     'RBI Grade B': '/logos/rbi.jpeg',
     'SSC CGL': '/logos/ssc.jpeg',
+    'IBPS PO': '/logos/ibps.png',
     // Add more exams here
   };
 
