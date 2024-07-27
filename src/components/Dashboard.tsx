@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Header from './Header';
@@ -33,44 +33,59 @@ interface ExamTitle {
 const Dashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [resources, setResources] = useState<Resource[]>([]);
-  const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [isUpdateExamModalOpen, setIsUpdateExamModalOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [examNames, setExamNames] = useState<ExamTitle[]>([]);
   const [activeExamName, setActiveExamName] = useState('All');
   const [isMobile, setIsMobile] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isUpdateExamModalOpen, setIsUpdateExamModalOpen] = useState(false);
   const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isQuickActionsModalOpen, setIsQuickActionsModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [subscribedExams, setSubscribedExams] = useState([]);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
 
   const { isLoaded, userId } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (isLoaded) {
-      setIsAuthenticated(!!userId);
-    }
-  }, [isLoaded, userId]);
+  const isAuthenticated = useMemo(() => isLoaded && !!userId, [isLoaded, userId]);
 
-  const filterResources = useCallback(() => {
-    if (activeExamName === 'All') {
-      setFilteredResources(resources);
-    } else {
-      const filtered = resources.filter(resource => resource.examName === activeExamName);
-      setFilteredResources(filtered);
-    }
+  const filteredResources = useMemo(() => {
+    return activeExamName === 'All' 
+      ? resources 
+      : resources.filter(resource => resource.examName === activeExamName);
   }, [activeExamName, resources]);
 
+  const fetchData = useCallback(async () => {
+    try {
+      const [resourcesRes, examNamesRes, subscribedExamsRes] = await Promise.all([
+        fetch('/api/get-resources'),
+        fetch('/api/get-exam-names'),
+        fetch('/api/get-subscribed-exams-details')
+      ]);
+
+      if (resourcesRes.ok && examNamesRes.ok && subscribedExamsRes.ok) {
+        const [resourcesData, examNamesData, subscribedExamsData] = await Promise.all([
+          resourcesRes.json(),
+          examNamesRes.json(),
+          subscribedExamsRes.json()
+        ]);
+
+        setResources(resourcesData.resources);
+        setExamNames(examNamesData.examNames);
+        setSubscribedExams(subscribedExamsData.subscribedExams);
+      } else {
+        console.error('Failed to fetch data');
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }, []);
+
   useEffect(() => {
-    fetchResources();
-    fetchExamNames();
-    fetchSubscribedExams();
+    fetchData();
 
     const checkMobile = () => {
       const isSmallScreen = window.innerWidth < 1024;
@@ -82,63 +97,17 @@ const Dashboard: React.FC = () => {
     window.addEventListener('resize', checkMobile);
 
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  useEffect(() => {
-    filterResources();
-  }, [filterResources]);
-
-  const fetchResources = async () => {
-    try {
-      const response = await fetch('/api/get-resources');
-      if (response.ok) {
-        const data = await response.json();
-        setResources(data.resources);
-      } else {
-        console.error('Failed to fetch resources');
-      }
-    } catch (error) {
-      console.error('Error fetching resources:', error);
-    }
-  };
-
-  const fetchExamNames = async () => {
-    try {
-      const response = await fetch('/api/get-exam-names');
-      if (response.ok) {
-        const data = await response.json();
-        setExamNames(data.examNames);
-      } else {
-        console.error('Failed to fetch categories');
-      }
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchSubscribedExams = async () => {
-    try {
-      const response = await fetch('/api/get-subscribed-exams-details');
-      if (response.ok) {
-        const data = await response.json();
-        setSubscribedExams(data.subscribedExams);
-      } else {
-        console.error('Failed to fetch subscribed exams');
-      }
-    } catch (error) {
-      console.error('Error fetching subscribed exams:', error);
-    }
-  };
+  }, [fetchData]);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen(prevState => !prevState);
   }, []);
 
-  const handleExamNameChange = (category: string) => {
+  const handleExamNameChange = useCallback((category: string) => {
     setActiveExamName(category);
-  };
+  }, []);
 
-  const handleQuickAction = (action: 'upload' | 'updateExam') => {
+  const handleQuickAction = useCallback((action: 'upload' | 'updateExam') => {
     if (userId) {
       if (action === 'upload') {
         setIsUploadModalOpen(true);
@@ -148,19 +117,19 @@ const Dashboard: React.FC = () => {
     } else {
       setIsLoginPopupOpen(true);
     }
-  };
+  }, [userId]);
 
-  const handleSearchClick = () => {
+  const handleSearchClick = useCallback(() => {
     setIsSearchModalOpen(true);
-  };
+  }, []);
 
-  const handleQuickActionsClick = () => {
+  const handleQuickActionsClick = useCallback(() => {
     setIsQuickActionsModalOpen(true);
-  };
+  }, []);
 
-  const handleTimelineClick = () => {
+  const handleTimelineClick = useCallback(() => {
     setIsTimelineModalOpen(true);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#040E12] text-white">
@@ -175,13 +144,13 @@ const Dashboard: React.FC = () => {
           ${isMobile ? 'mb-16 pt-20' : 'mt-16'}`}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              
               {isMobile && (
                 <ExamCountdown 
                   subscribedExams={subscribedExams} 
                   isAuthenticated={isAuthenticated} 
                   userId={userId as string}
-                />              )}
+                />
+              )}
               <ExamNamePills 
                 examNames={examNames}
                 activeExamName={activeExamName} 
@@ -191,14 +160,13 @@ const Dashboard: React.FC = () => {
             </div>
             {!isMobile && (
               <div className="space-y-6">
-                <ExamTimeline 
-                  refreshTrigger={refreshTrigger}
-                />
-<ExamCountdown 
+                <ExamTimeline refreshTrigger={refreshTrigger} />
+                <ExamCountdown 
                   subscribedExams={subscribedExams} 
                   isAuthenticated={isAuthenticated} 
                   userId={userId as string}
-                />              </div>
+                />
+              </div>
             )}
           </div>
         </main>
@@ -213,8 +181,7 @@ const Dashboard: React.FC = () => {
         <UploadResourceModal 
           onClose={() => setIsUploadModalOpen(false)} 
           onUploadSuccess={() => {
-            fetchResources();
-            fetchExamNames();
+            fetchData();
             setRefreshTrigger(prev => prev + 1);
           }} 
         />
@@ -231,7 +198,7 @@ const Dashboard: React.FC = () => {
         <LoginPopup onClose={() => setIsLoginPopupOpen(false)} />
       )}
       {isMobile && isSearchModalOpen && (
-        <div className="fixed inset-x-0 top-0 bg-white dark:bg-[#07080B] z-50 p-4">
+        <div className="fixed inset-x-0 top-0 bottom-16 bg-white dark:bg-[#07080B] z-50 p-4">
           <input 
             type="text" 
             className="w-full rounded-md bg-[#F1F6FF] px-4 py-2 text-black focus:outline-none focus:ring-1 focus:ring-gray-700 dark:bg-[#0F1618] dark:text-white" 
@@ -252,7 +219,6 @@ const Dashboard: React.FC = () => {
           <div className="bg-white dark:bg-[#07080B] p-4 rounded-lg w-full max-w-md">
             <QuickActions 
               onUpload={() => handleQuickAction('upload')}
-              // onUpdateExam={() => handleQuickAction('updateExam')}
               isLoggedIn={!!userId}
             />
             <button 

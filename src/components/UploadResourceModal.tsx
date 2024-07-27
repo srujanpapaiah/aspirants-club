@@ -1,30 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { X, Upload } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { X, Upload, Loader2 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
-
 
 interface UploadModalProps {
   onClose: () => void;
   onUploadSuccess: () => void;
 }
 
-const popularExams = [
-  "UPSC Civil Services",
-  "SSC CGL",
-  "SSC CHSL",
-  "IBPS PO",
-  "IBPS Clerk",
-  "RBI Grade B",
-  "SBI PO",
-  "Railway RRB",
-  "GATE",
-  "UGC NET",
-  "CTET",
-  "NDA",
-  "CDS",
-  "CAPF",
-  "Other"
-];
+interface Exam {
+  _id: string;
+  examName: string;
+  examDate: string;
+}
 
 const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadSuccess }) => {
   const { user } = useUser();
@@ -33,7 +20,32 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadSuccess }) =
   const [examTitle, setExamTitle] = useState('');
   const [examCategory, setExamCategory] = useState('');
   const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [exams, setExams] = useState<Exam[]>([]);
+  const [isExamsLoading, setIsExamsLoading] = useState(true);
+  const [examsError, setExamsError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        const response = await fetch('/api/exams');
+        if (response.ok) {
+          const data = await response.json();
+          setExams(data.exams);
+        } else {
+          throw new Error('Failed to fetch exams');
+        }
+      } catch (error) {
+        console.error('Error fetching exams:', error);
+        setExamsError('Failed to load exams. Please try again later.');
+      } finally {
+        setIsExamsLoading(false);
+      }
+    };
+
+    fetchExams();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -63,6 +75,7 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadSuccess }) =
       return;
     }
 
+    setIsLoading(true);
     const finalExamName = examName === 'Other' ? customExamName : examName;
 
     const formData = new FormData();
@@ -92,75 +105,137 @@ const UploadModal: React.FC<UploadModalProps> = ({ onClose, onUploadSuccess }) =
     } catch (error) {
       console.error('Error uploading resource:', error);
       alert('An error occurred while uploading the resource.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  if (isExamsLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-[#121717] rounded-lg p-6">
+          <Loader2 className="animate-spin h-8 w-8 text-white" />
+          <p className="mt-2 text-white">Loading exams...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (examsError) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-[#121717] rounded-lg p-6">
+          <p className="text-red-500">{examsError}</p>
+          <button 
+            onClick={onClose}
+            className="mt-4 bg-[#1AA38C] text-white px-4 py-2 rounded-lg"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-[#1E1E1E] rounded-lg p-6 w-full max-w-md">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-white">Upload Resource</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
+      <div className="bg-[#121717] rounded-lg p-6 w-full max-w-md">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold text-white">Upload Resource</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <X size={24} />
           </button>
         </div>
-        <form onSubmit={handleUpload} className="space-y-4">
-          <select
-            value={examName}
-            onChange={handleExamNameChange}
-            required
-            className="w-full bg-[#2C2C2C] text-[#E0E0E0] border border-[#4A90E2] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#4A90E2]"
-          >
-            <option value="">Select Exam Name</option>
-            {popularExams.map((exam) => (
-              <option key={exam} value={exam}>{exam}</option>
-            ))}
-          </select>
-          {examName === 'Other' && (
-            <input
-              type="text"
-              value={customExamName}
-              onChange={(e) => setCustomExamName(e.target.value)}
-              placeholder="Enter Custom Exam Name"
+        <form onSubmit={handleUpload} className="space-y-5">
+          <div>
+            <label htmlFor="examName" className="block text-sm font-medium text-gray-300 mb-1">Exam Name</label>
+            <select
+              id="examName"
+              value={examName}
+              onChange={handleExamNameChange}
               required
-              className="w-full bg-[#2C2C2C] text-[#E0E0E0] border border-[#4A90E2] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#4A90E2]"
-            />
+              className="w-full bg-[#1E2A2F] text-white border border-[#1AA38C] rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#1AA38C] transition-colors"
+            >
+              <option value="">Select Exam Name</option>
+              {exams.map((exam) => (
+                <option key={exam._id} value={exam.examName}>{exam.examName}</option>
+              ))}
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          {examName === 'Other' && (
+            <div>
+              <label htmlFor="customExamName" className="block text-sm font-medium text-gray-300 mb-1">Custom Exam Name</label>
+              <input
+                id="customExamName"
+                type="text"
+                value={customExamName}
+                onChange={(e) => setCustomExamName(e.target.value)}
+                placeholder="Enter Custom Exam Name"
+                required
+                className="w-full bg-[#1E2A2F] text-white border border-[#1AA38C] rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#1AA38C] transition-colors"
+              />
+            </div>
           )}
-          <input
-            type="text"
-            value={examTitle}
-            onChange={(e) => setExamTitle(e.target.value)}
-            placeholder="Resource Title"
-            required
-            className="w-full bg-[#2C2C2C] text-[#E0E0E0] border border-[#4A90E2] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#4A90E2]"
-          />
-          <select
-            value={examCategory}
-            onChange={(e) => setExamCategory(e.target.value)}
-            required
-            className="w-full bg-[#2C2C2C] text-[#E0E0E0] border border-[#4A90E2] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#4A90E2]"
-          >
-            <option value="">Select Category</option>
-            <option value="Syllabus">Syllabus</option>
-            <option value="Previous Year Papers">Previous Year Papers</option>
-            <option value="Mock Tests">Mock Tests</option>
-            <option value="Study Material">Study Material</option>
-            <option value="Current Affairs">Current Affairs</option>
-          </select>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".pdf,.doc,.docx"
-            required
-            className="w-full bg-[#2C2C2C] text-[#E0E0E0] border border-[#4A90E2] rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#4A90E2]"
-          />
+          <div>
+            <label htmlFor="examTitle" className="block text-sm font-medium text-gray-300 mb-1">Resource Title</label>
+            <input
+              id="examTitle"
+              type="text"
+              value={examTitle}
+              onChange={(e) => setExamTitle(e.target.value)}
+              placeholder="Resource Title"
+              required
+              className="w-full bg-[#1E2A2F] text-white border border-[#1AA38C] rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#1AA38C] transition-colors"
+            />
+          </div>
+          <div>
+            <label htmlFor="examCategory" className="block text-sm font-medium text-gray-300 mb-1">Category</label>
+            <select
+              id="examCategory"
+              value={examCategory}
+              onChange={(e) => setExamCategory(e.target.value)}
+              required
+              className="w-full bg-[#1E2A2F] text-white border border-[#1AA38C] rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#1AA38C] transition-colors"
+            >
+              <option value="">Select Category</option>
+              <option value="Syllabus">Syllabus</option>
+              <option value="Previous Year Papers">Previous Year Papers</option>
+              <option value="Mock Tests">Mock Tests</option>
+              <option value="Study Material">Study Material</option>
+              <option value="Current Affairs">Current Affairs</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="file" className="block text-sm font-medium text-gray-300 mb-1">Upload File</label>
+            <input
+              id="file"
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept=".pdf,.doc,.docx"
+              required
+              className="w-full bg-[#1E2A2F] text-white border border-[#1AA38C] rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#1AA38C] transition-colors file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#1AA38C] file:text-white hover:file:bg-[#158F7A]"
+            />
+          </div>
           <button
             type="submit"
-            className="w-full bg-[#4A90E2] text-white p-2 rounded hover:bg-[#3A80D2] transition-colors flex items-center justify-center"
+            disabled={isLoading}
+            className={`w-full bg-[#1AA38C] text-white p-3 rounded-lg font-medium transition-colors flex items-center justify-center ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#158F7A]'
+            }`}
           >
-            <Upload className="mr-2" size={20} />
-            Upload Resource
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="mr-2" size={20} />
+                Upload Resource
+              </>
+            )}
           </button>
         </form>
       </div>

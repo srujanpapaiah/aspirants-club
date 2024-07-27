@@ -5,7 +5,8 @@ import Image from 'next/image';
 type SidebarItem = {
   src: string;
   text: string;
-  link: string;
+  link?: string;
+  comingSoon?: boolean;
 };
 
 type Category = {
@@ -32,8 +33,8 @@ const Sidebar = ({ isOpen, isMobile }: { isOpen: boolean; isMobile: boolean }) =
     {
       title: 'You',
       items: [
-        { src: '/icons/sidebar/book-icon.svg', text: 'Resources', link: '/resources' },
-        { src: '/icons/sidebar/save-icon.svg', text: 'Saved', link: '/saved' },
+        { src: '/icons/sidebar/book-icon.svg', text: 'Resources', comingSoon: true },
+        { src: '/icons/sidebar/save-icon.svg', text: 'Saved', comingSoon: true },
       ],
     },
   ];
@@ -61,10 +62,12 @@ const Sidebar = ({ isOpen, isMobile }: { isOpen: boolean; isMobile: boolean }) =
     fetchSubscribedExams();
   }, []);
 
-  const isActive = (itemLink: string) => pathname === itemLink;
+  const isActive = (itemLink?: string) => pathname === itemLink;
 
-  const handleNavigation = (link: string) => {
-    router.push(link);
+  const handleNavigation = (link?: string) => {
+    if (link) {
+      router.push(link);
+    }
   };
 
   const categories: Category[] = [
@@ -95,18 +98,26 @@ const Sidebar = ({ isOpen, isMobile }: { isOpen: boolean; isMobile: boolean }) =
                     <button
                       key={itemIndex}
                       onClick={() => handleNavigation(item.link)}
-                      className={`flex w-full items-center space-x-3 rounded-md py-2 px-3 transition-colors duration-200 ${
+                      className={`flex w-full items-center justify-between rounded-md py-2 px-3 transition-colors duration-200 ${
                         active ? 'bg-gray-100 text-teal-600 dark:bg-gray-800 dark:text-teal-400' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
+                      } ${item.comingSoon ? 'cursor-default' : 'cursor-pointer'}`}
+                      disabled={item.comingSoon}
                     >
-                      <Image
-                        src={item.src}
-                        alt=""
-                        width={20}
-                        height={20}
-                        className={`${active ? 'text-teal-600 dark:text-teal-400' : ''}`}
-                      />
-                      <span className="text-sm font-medium">{item.text}</span>
+                      <div className="flex items-center space-x-3">
+                        <Image
+                          src={item.src}
+                          alt=""
+                          width={20}
+                          height={20}
+                          className={`${active ? 'text-teal-600 dark:text-teal-400' : ''}`}
+                        />
+                        <span className="text-sm font-medium">{item.text}</span>
+                      </div>
+                      {item.comingSoon && (
+                        <span className="text-xs font-semibold text-teal-500 dark:text-teal-400 ">
+                          Coming Soon
+                        </span>
+                      )}
                     </button>
                   );
                 })}

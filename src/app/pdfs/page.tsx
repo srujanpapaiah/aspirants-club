@@ -12,8 +12,6 @@ export default function PDFViewingPage() {
   return (
     <div className="min-h-screen bg-[#040E12] text-white">
       <Header 
-        searchQuery=""
-        setSearchQuery={() => {}}
         isMobile={false}
         toggleSidebar={() => {}}
       />

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Clock, Calendar, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+
 interface Exam {
   _id: string;
   examName: string;
@@ -85,7 +86,7 @@ const ExamCountdown: React.FC<ExamCountdownProps> = ({ subscribedExams, isAuthen
   const findNearestExam = () => {
     console.log('Finding nearest exam...');
     const now = new Date();
-    let nearest: Exam | null = null;
+    let nearest: Exam | null = null as Exam | null;
     let nearestDate: Date | null = null;
 
     subscribedExams.forEach(exam => {

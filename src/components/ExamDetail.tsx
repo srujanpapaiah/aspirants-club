@@ -1,19 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { useUser } from "@clerk/nextjs";
+import { Calendar, Book, Link as LinkIcon, ArrowLeft, Bell, BookOpen, Users, FileText, PenTool, Globe, Newspaper, Briefcase, Video, ExternalLink, Youtube, CheckCircle, Download } from 'lucide-react';
+import toast from 'react-hot-toast';
+
 import Header from './Header';
 import Sidebar from './Sidebar';
-import { useUser } from "@clerk/nextjs";
-import { Calendar, Book, Link as LinkIcon, ArrowLeft, Bell, BookOpen, Users, FileText, PenTool, Globe, Newspaper, Briefcase, Video, ExternalLink, Youtube } from 'lucide-react';
-import toast from 'react-hot-toast';
 import LoginPopup from './LoginPopup';
+import ExamCountdown from './ExamCountdown';
+import MobileNavbar from './MobileNavbar';
 
 interface ExamDetail {
   _id: string;
   examName: string;
-  examDate: string | null;
-  examDetails: string;
-  source: string;
+  examDate: string;
+  examDetails?: string;
+  source?: string;
   logoUrl?: string;
   youtubeChannels?: string[];
 }
@@ -33,15 +36,68 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isLoginPopupOpen, setIsLoginPopupOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
   const [channelInfo, setChannelInfo] = useState<YouTubeChannelInfo[]>([]);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [subscribedExams, setSubscribedExams] = useState([]);
+
   const { user } = useUser();
   const router = useRouter();
+
+  const fetchExamDetail = useCallback(async (examId: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+
+      const response = await fetch(`/api/exams/${examId}`);
+
+      if (response.ok) {
+        const data = await response.json();
+        setExam(data);
+
+        const [subscribedExamsRes] = await Promise.all([
+          fetch('/api/get-subscribed-exams-details')
+        ]);
+
+        if (subscribedExamsRes.ok) {
+          const [subscribedExamsData] = await Promise.all([
+            subscribedExamsRes.json()
+          ]);
+  
+          setSubscribedExams(subscribedExamsData.subscribedExams);
+        } else {
+          console.error('Failed to fetch data');
+        }
+      } else {
+        throw new Error('Failed to fetch exam details');
+      }
+    } catch (error) {
+      console.error('Error fetching exam details:', error);
+      setError('Failed to load exam details. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const fetchSubscriptionStatus = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const response = await fetch(`/api/subscribe/${examId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setIsSubscribed(data.isSubscribed);
+      } else {
+        throw new Error('Failed to fetch subscription status');
+      }
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+    }
+  }, [examId, user]);
 
   useEffect(() => {
     fetchExamDetail(examId);
     if (user) {
-      checkSubscriptionStatus(examId);
+      fetchSubscriptionStatus();
     }
 
     const checkMobile = () => {
@@ -54,7 +110,7 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
     window.addEventListener('resize', checkMobile);
 
     return () => window.removeEventListener('resize', checkMobile);
-  }, [examId, user]);
+  }, [examId, user, fetchExamDetail, fetchSubscriptionStatus]);
 
   useEffect(() => {
     if (exam?.youtubeChannels) {
@@ -62,56 +118,7 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
     }
   }, [exam]);
 
-  const fetchExamDetail = async (examId: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(`/api/exams/${examId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setExam(data);
-      } else {
-        throw new Error('Failed to fetch exam details');
-      }
-    } catch (error) {
-      console.error('Error fetching exam details:', error);
-      setError('Failed to load exam details. Please try again later.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) {
-      return 'Date not available';
-    }
-    if (dateString.startsWith('Between')) {
-      return dateString;
-    }
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Invalid date';
-    }
-  };
-
-  const checkSubscriptionStatus = async (examId: string) => {
-    try {
-      const response = await fetch(`/api/subscribe/${examId}`, {
-        method: 'GET',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setIsSubscribed(data.isSubscribed);
-      }
-    } catch (error) {
-      console.error('Error checking subscription status:', error);
-    }
-  };
-
-  const handleSubscribe = async () => {
+  const toggleSubscription = async () => {
     if (!user) {
       setIsLoginPopupOpen(true);
       return;
@@ -123,18 +130,24 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ 
+          userId: user.id, 
+          token: 'dummy-token',
+          phoneNumber: user.primaryPhoneNumber?.phoneNumber || ''
+        }),
       });
 
       if (response.ok) {
-        setIsSubscribed(true);
-        toast.success('Subscribed to exam updates successfully');
+        const data = await response.json();
+        setIsSubscribed(data.isSubscribed);
+        toast.success(data.message);
+        await fetchSubscriptionStatus();
       } else {
-        throw new Error('Failed to subscribe');
+        throw new Error('Failed to toggle subscription');
       }
     } catch (error) {
-      console.error('Error subscribing to exam:', error);
-      toast.error('Failed to subscribe to exam updates');
+      console.error('Error toggling exam subscription:', error);
+      toast.error('Failed to update exam subscription');
     }
   };
 
@@ -171,6 +184,10 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
     setChannelInfo(channelInfoResults.filter((info): info is YouTubeChannelInfo => info !== null));
   };
 
+  const handleTimelineClick = () => {
+    setIsTimelineModalOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-[#121717]">
@@ -193,15 +210,12 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#040E12] text-white">
-      <Header 
-        toggleSidebar={toggleSidebar} 
-        isMobile={isMobile}
-      />
+      <Header toggleSidebar={toggleSidebar} isMobile={isMobile} />
       <div className="flex-grow flex overflow-hidden">
         <Sidebar isOpen={isSidebarOpen} isMobile={isMobile} />
-        <main className={`flex-grow p-4 md:p-6 overflow-y-auto transition-all duration-300 ease-in-out
+        <main className={`flex-grow p-6 overflow-y-auto transition-all duration-300 ease-in-out
           ${isSidebarOpen && !isMobile ? 'ml-64' : 'ml-0'}
-          ${isMobile ? 'mb-16 pt-4' : 'mt-16'}`}>
+          ${isMobile ? 'mb-16' : 'mt-4'}`}>
           <button
             onClick={() => router.back()}
             className="mb-6 text-[#4A90E2] hover:text-[#3A7FCF] transition-colors flex items-center"
@@ -209,19 +223,19 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
             <ArrowLeft size={20} className="mr-2" />
             Back to Timeline
           </button>
-          <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden mb-6">
             <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div className="flex items-center mb-4 md:mb-0">
                   {exam.logoUrl ? (
-                    <img src={exam.logoUrl} alt={`${exam.examName} logo`} className="h-16 w-16 object-contain rounded-full border-2 border-[#1AA38C] mr-4" />
+                    <Image src={exam.logoUrl} alt={`${exam.examName} logo`} width={80} height={80} className="rounded-full border-2 border-[#1AA38C] mr-4" />
                   ) : (
-                    <div className="h-16 w-16 rounded-full border-2 border-[#1AA38C] mr-4 flex items-center justify-center bg-[#1E2A2F]">
-                      <BookOpen size={32} className="text-[#1AA38C]" />
+                    <div className="h-20 w-20 rounded-full border-2 border-[#1AA38C] mr-4 flex items-center justify-center bg-[#1E2A2F]">
+                      <BookOpen size={40} className="text-[#1AA38C]" />
                     </div>
                   )}
                   <div>
-                    <h1 className="text-2xl font-bold text-[#FFFFFF]">{exam.examName}</h1>
+                    <h1 className="text-3xl font-bold text-white">{exam.examName}</h1>
                     <a 
                       href={exam.source} 
                       target="_blank" 
@@ -234,209 +248,185 @@ const ExamInformationPage: React.FC<{ examId: string }> = ({ examId }) => {
                   </div>
                 </div>
                 <button
-                  onClick={handleSubscribe}
-                  className={`px-4 py-2 rounded-full flex items-center ${
-                    isSubscribed ? 'bg-[#1AA38C]' : 'bg-[#121717] border-2 border-[#1AA38C]'
-                  }`}
+                  onClick={toggleSubscription}
+                  className={`px-6 py-2 rounded-full flex items-center transition-colors duration-200 ${
+                    isSubscribed 
+                      ? 'bg-[#1AA38C] hover:bg-[#158F7A]' 
+                      : 'bg-[#1E2A2F] border-2 border-[#1AA38C] hover:bg-[#1AA38C]'
+                  } text-white font-medium`}
                 >
-                  <Bell size={16} className="mr-2" />
-                  {isSubscribed ? 'Subscribed' : 'Subscribe for Updates'}
+                  <Bell size={18} className="mr-2" />
+                  {isSubscribed ? 'Unsubscribe' : 'Subscribe for Updates'}
                 </button>
               </div>
             </div>
             
-            <div className="mb-4">
-              <div className="flex border-b border-gray-700 overflow-x-auto">
-                {['overview', 'Notification', 'Resources', 'News', 'Toppers', 'Documents', 'YouTube'].map((tab) => (
-                  <button
-                    key={tab}
-                    className={`px-4 py-2 font-medium whitespace-nowrap ${
-                      activeTab === tab ? 'border-b-2 border-[#4A90E2] text-[#4A90E2]' : 'text-gray-400'
-                    }`}
-                    onClick={() => setActiveTab(tab)}
-                  >
-                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                  </button>
-                ))}
+            <div className="p-6 bg-[#1E2A2F] border-t border-gray-700">
+              <h2 className="text-2xl font-semibold text-white mb-4">Exam Overview</h2>
+              <ExamCountdown 
+                subscribedExams={[exam]} 
+                isAuthenticated={!!user} 
+                userId={user?.id || null}
+              />
+            </div>
+          </div>
+  
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Exam Preparation Card */}
+            <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden relative">
+              <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
+                <span className="text-white text-2xl font-bold bg-[#1AA38C] px-4 py-2 rounded-full">Coming Soon</span>
+              </div>
+              <div className="p-6 filter blur-sm">
+                <h2 className="text-2xl font-semibold text-white mb-4">Exam Preparation</h2>
+                <div className="space-y-4">
+                  <div className="bg-[#1E2A2F] p-4 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <BookOpen className="mr-3 text-[#1AA38C]" size={24} />
+                        <h3 className="text-lg font-medium">Study Progress</h3>
+                      </div>
+                      <span className="text-[#1AA38C] font-medium">33%</span>
+                    </div>
+                    <div className="w-full bg-[#121717] rounded-full h-2.5">
+                      <div className="bg-[#1AA38C] h-2.5 rounded-full" style={{ width: '33%' }}></div>
+                    </div>
+                  </div>
+                  <div className="bg-[#1E2A2F] p-4 rounded-lg">
+                    <div className="flex items-center mb-2">
+                      <PenTool className="mr-3 text-[#1AA38C]" size={24} />
+                      <h3 className="text-lg font-medium">Next Mock Test</h3>
+                    </div>
+                    <p className="text-gray-300">July 25, 2024</p>
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="bg-[#1E2A2F] p-4 rounded-lg">
-              {activeTab === 'overview' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Exam Overview</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>{formatDate(exam.examDate)}</span>
+  
+            {/* Resources Card */}
+            <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden relative">
+              <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
+                <span className="text-white text-2xl font-bold bg-[#1AA38C] px-4 py-2 rounded-full">Coming Soon</span>
+              </div>
+              <div className="p-6 filter blur-sm">
+                <h2 className="text-2xl font-semibold text-white mb-4">Resources</h2>
+                <div className="space-y-4">
+                  {[
+                    { icon: Globe, text: 'Language Learning Modules' },
+                    { icon: Newspaper, text: 'Latest Exam News and Updates' },
+                    { icon: Briefcase, text: 'Career Guidance' },
+                    { icon: BookOpen, text: 'Study Materials' },
+                  ].map((item, index) => (
+                    <div key={index} className="bg-[#1E2A2F] p-3 rounded-lg flex items-center">
+                      <item.icon className="mr-3 text-[#1AA38C]" size={20} />
+                      <span className="text-gray-200">{item.text}</span>
                     </div>
-                    <div className="flex items-start">
-                      <Book className="mr-2 text-[#4A90E2] mt-1" size={20} />
-                      <p className="flex-1">{exam.examDetails}</p>
-                    </div>
-                    <div className="flex items-center">
-                      <LinkIcon className="mr-2 text-[#4A90E2]" size={20} />
-                      <a href={exam.source} target="_blank" rel="noopener noreferrer" className="text-[#4A90E2] hover:underline">
-                        Official Source
-                      </a>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              )}
-              
-              {activeTab === 'Notification' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Exam Preparation</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <BookOpen className="mr-2 text-[#4A90E2]" size={20} />
-                        <span>Study Progress</span>
-                      </div>
-                      <div className="w-1/2 bg-gray-700 rounded-full h-2.5">
-                        <div className="bg-[#4A90E2] h-2.5 rounded-full" style={{ width: '33%' }}></div>
-                      </div>
-                    </div>
-                    <div className="flex items-center">
-                      <PenTool className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Next Mock Test: July 25, 2024</span>
-                    </div>
-                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Access Study Materials
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'Resources' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Additional Resources</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <Globe className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Language Learning Modules</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Newspaper className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Latest Exam News and Updates</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Briefcase className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Career Guidance</span>
-                    </div>
-                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Explore All Resources
-                    </button>
-                  </div>
-                </div>
-              )}
-              
-              {activeTab === 'News' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Latest News</h2>
-                  <div className="space-y-4">
-                  <div className="flex items-center">
-                      <Newspaper className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Exam Date Announced</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Newspaper className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>New Syllabus Released</span>
-                    </div>
-                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Read More News
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'Toppers' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Top Performers</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <Users className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>View success stories of previous exam toppers</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Video className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Topper Interviews: Learn from the best</span>
-                    </div>
-                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Explore Topper Insights
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'Documents' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Important Documents</h2>
-                  <div className="space-y-4">
-                    <div className="flex items-center">
-                      <FileText className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Exam Syllabus</span>
-                    </div>
-                    <div className="flex items-center">
-                      <FileText className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Previous Year Question Papers</span>
-                    </div>
-                    <div className="flex items-center">
-                      <FileText className="mr-2 text-[#4A90E2]" size={20} />
-                      <span>Study Material</span>
-                    </div>
-                    <button className="w-full bg-[#4A90E2] text-white py-2 rounded hover:bg-[#3A7FCF] transition-colors">
-                      Download Documents
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === 'YouTube' && (
-                <div>
-                  <h2 className="text-xl font-semibold mb-6">Recommended YouTube Channels</h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {channelInfo.map((channel) => (
-                      <div key={channel.id} className="bg-[#121717] rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300">
-                        <div className="relative">
-                          <Image
-                            src={channel.thumbnailUrl}
-                            alt={`${channel.name} thumbnail`}
-                            width={320}
-                            height={180}
-                            layout="responsive"
-                            className="object-cover"
-                          />
-                          <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-                            <a
-                              href={`https://www.youtube.com/channel/${channel.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bg-red-600 text-white py-2 px-4 rounded-full flex items-center hover:bg-red-700 transition-colors duration-300"
-                            >
-                              <Youtube size={20} className="mr-2" />
-                              Visit Channel
-                            </a>
-                          </div>
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-lg mb-2 truncate">{channel.name}</h3>
-                          <p className="text-gray-400 flex items-center">
-                            <Users size={16} className="mr-2" />
-                            {channel.subscriberCount}
-                          </p>
+              </div>
+            </div>
+  
+            {/* Toppers Card */}
+            <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden relative">
+              <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
+                <span className="text-white text-2xl font-bold bg-[#1AA38C] px-4 py-2 rounded-full">Coming Soon</span>
+              </div>
+              <div className="p-6 filter blur-sm">
+                <h2 className="text-2xl font-semibold text-white mb-4">Learn from Top Performers</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[1, 2].map((_, index) => (
+                    <div key={index} className="bg-[#1E2A2F] p-4 rounded-lg">
+                      <div className="flex items-center mb-2">
+                        <div className="w-12 h-12 bg-gray-600 rounded-full mr-3"></div>
+                        <div>
+                          <h3 className="font-semibold">Top Performer</h3>
+                          <span className="text-[#1AA38C]">Rank {index + 1}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <p className="text-gray-400">Expert in subject area</p>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            </div>
+  
+            {/* Documents Card */}
+            <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden relative">
+              <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
+                <span className="text-white text-2xl font-bold bg-[#1AA38C] px-4 py-2 rounded-full">Coming Soon</span>
+              </div>
+              <div className="p-6 filter blur-sm">
+                <h2 className="text-2xl font-semibold text-white mb-4">Important Documents</h2>
+                <div className="space-y-4">
+                  {[
+                    'Exam Syllabus',
+                    'Previous Year Question Papers',
+                    'Study Material',
+                    'Exam Guidelines',
+                  ].map((doc, index) => (
+                    <div key={index} className="bg-[#1E2A2F] p-3 rounded-lg flex items-center">
+                      <FileText className="mr-3 text-[#1AA38C]" size={20} />
+                      <span className="text-gray-200">{doc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+  
+            {/* YouTube Channels Card */}
+            <div className="bg-[#121717] rounded-lg shadow-lg overflow-hidden relative md:col-span-2">
+              <div className="absolute inset-0 bg-black bg-opacity-60 flex items-center justify-center z-10">
+                <span className="text-white text-2xl font-bold bg-[#1AA38C] px-4 py-2 rounded-full">Coming Soon</span>
+              </div>
+              <div className="p-6 filter blur-sm">
+                <h2 className="text-2xl font-semibold text-white mb-4">Recommended YouTube Channels</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {channelInfo.map((channel) => (
+                    <div key={channel.id} className="bg-[#1E2A2F] p-4 rounded-lg">
+                      <div className="w-full h-32 bg-gray-600 rounded-lg mb-3">
+                        <Image
+                          src={channel.thumbnailUrl}
+                          alt={`${channel.name} thumbnail`}
+                          layout="fill"
+                          objectFit="cover"
+                          className="rounded-lg"
+                        />
+                      </div>
+                      <h3 className="font-semibold text-lg mb-1">{channel.name}</h3>
+                      <p className="text-gray-400 flex items-center">
+                        <Users size={16} className="mr-2 text-[#1AA38C]" />
+                        {channel.subscriberCount}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </main>
       </div>
+      {isMobile && (
+        <MobileNavbar 
+          onQuickActionsClick={() => {/* Handle quick actions */}}
+          onTimelineClick={handleTimelineClick}
+        />
+      )}
       {isLoginPopupOpen && (
         <LoginPopup onClose={() => setIsLoginPopupOpen(false)} />
+      )}
+      {isTimelineModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#121717] p-4 rounded-lg w-full max-w-md overflow-y-auto max-h-[90vh]">
+            <h2 className="text-xl font-semibold mb-4">Exam Timeline</h2>
+            {/* Add your timeline content here */}
+            <button 
+              onClick={() => setIsTimelineModalOpen(false)}
+              className="mt-4 w-full bg-[#1AA38C] text-white py-2 rounded-md"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
