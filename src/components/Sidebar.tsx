@@ -35,6 +35,7 @@ const Sidebar = ({ isOpen, isMobile }: { isOpen: boolean; isMobile: boolean }) =
       items: [
         { src: '/icons/sidebar/book-icon.svg', text: 'Resources', comingSoon: true },
         { src: '/icons/sidebar/save-icon.svg', text: 'Saved', comingSoon: true },
+        { src: '/icons/download.svg', text: 'Eligibility', comingSoon: false, link: '/eligibility' },
       ],
     },
   ];
