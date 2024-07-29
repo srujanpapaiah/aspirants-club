@@ -16,6 +16,8 @@ type SidebarItem = {
   text: string;
   link?: string;
   comingSoon?: boolean;
+  video?: string;
+  audio?: string
 };
 
 type Category = {
@@ -45,6 +47,8 @@ const MobileNavbar: React.FC<MobileNavbarProps> = ({
     {
       title: 'You',
       items: [
+        { src: '/icons/sidebar/eligibility.svg', text: 'Eligibility', comingSoon: false, link: '/eligibility' },
+        { src: '/icons/sidebar/study-space-icon.svg', text: 'Study Space', comingSoon: false, link: '/study-space' },
         { src: '/icons/sidebar/book-icon.svg', text: 'Resources', comingSoon: true },
         { src: '/icons/sidebar/save-icon.svg', text: 'Saved', comingSoon: true },
       ],

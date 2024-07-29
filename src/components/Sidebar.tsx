@@ -33,9 +33,10 @@ const Sidebar = ({ isOpen, isMobile }: { isOpen: boolean; isMobile: boolean }) =
     {
       title: 'You',
       items: [
+        { src: '/icons/sidebar/eligibility.svg', text: 'Eligibility', comingSoon: false, link: '/eligibility' },
+        { src: '/icons/sidebar/study-space-icon.svg', text: 'Study Space', comingSoon: false, link: '/study-space' },
         { src: '/icons/sidebar/book-icon.svg', text: 'Resources', comingSoon: true },
         { src: '/icons/sidebar/save-icon.svg', text: 'Saved', comingSoon: true },
-        { src: '/icons/download.svg', text: 'Eligibility', comingSoon: false, link: '/eligibility' },
       ],
     },
   ];
