@@ -4,10 +4,10 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 
 const environments = [
-  { name: 'Forest', video: '/videos/forest.mp4', audio: '/sounds/forest.mp3' },
-  { name: 'Waves', video: '/videos/waves.mp4', audio: '/sounds/waves.mp3' },
-  { name: 'Rainy Day', video: '/videos/rain.mp4', audio: '/sounds/rain.mp3' },
-  { name: 'Fireplace', video: '/videos/fireplace.mp4', audio: '/sounds/fireplace.mp3' },
+  { name: 'Forest', video: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/forest.mp4', audio: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/forest.mp3' },
+  { name: 'Waves', video: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/waves.mp4', audio: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/waves.mp3' },
+  { name: 'Rainy Day', video: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/rain.mp4', audio: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/rain.mp3' },
+  { name: 'Fireplace', video: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/fireplace.mp4', audio: 'https://aspirants-club-assets.s3.ap-south-1.amazonaws.com/fireplace.mp3' },
 ];
 
 const ZenStudySpace: React.FC = () => {
