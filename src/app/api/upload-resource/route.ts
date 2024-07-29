@@ -1,16 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { S3 } from 'aws-sdk';
 import clientPromise from '@/lib/mongodb';
 import { auth } from '@clerk/nextjs/server';
 
-// Configure AWS SDK
 const s3 = new S3({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   region: process.env.AWS_REGION,
 });
 
-export async function POST(request: Request) {
+export const runtime = 'nodejs';
+
+export async function POST(request: NextRequest) {
   try {
     const { userId } = auth();
     if (!userId) {
@@ -23,7 +24,6 @@ export async function POST(request: Request) {
     const examTitle = formData.get('examTitle') as string;
     const examCategory = formData.get('examCategory') as string;
     const userName = formData.get('userName') as string;
-
 
     if (!file || !examName || !examTitle || !examCategory || !userName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -39,9 +39,8 @@ export async function POST(request: Request) {
       ContentType: file.type,
     }).promise();
 
-    // Save resource info to MongoDB
     const client = await clientPromise;
-    const db = client.db('examPrep');
+    const db = client.db(process.env.MONGODB_DB);
     const result = await db.collection('resources').insertOne({
       userId,
       userName,
@@ -65,9 +64,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Failed to upload resource' }, { status: 500 });
   }
 }
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

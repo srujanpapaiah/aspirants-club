@@ -25,7 +25,7 @@ const ExamNamePills: React.FC<ExamNamePillsProps> = ({ examNames, activeExamName
           onClick={() => onExamNameChange('All')}
           className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
             activeExamName === 'All'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-[#1099AE] text-white'
               : 'bg-gray-800 text-white hover:bg-gray-700'
           }`}
         >
@@ -37,7 +37,7 @@ const ExamNamePills: React.FC<ExamNamePillsProps> = ({ examNames, activeExamName
             onClick={() => onExamNameChange(examName.name)}
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               activeExamName === examName.name
-                ? 'bg-blue-600 text-white'
+                ? 'bg-[#1099AE] text-white'
                 : 'bg-gray-800 text-white hover:bg-gray-700'
             }`}
           >

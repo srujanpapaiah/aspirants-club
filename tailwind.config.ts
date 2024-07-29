@@ -20,7 +20,20 @@ module.exports = {
             'background-position': 'right center'
           }
         }
-      }
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+      },
+      colors: {
+        PageBgDark: '#050D11',
+        PageBgLight: '#F8FBFC',
+        sectionBgDark: '#121717',
+        sectionBgLight: '#FBFBFB',
+        textColorLight: '#2D2F31',
+        textColorDark: '#D9D9D9',
+        borderColorDark: '#232A2C',
+      },
     },
   },
   plugins: [],

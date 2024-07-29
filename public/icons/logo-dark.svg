@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 60">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#4a90e2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5cb3ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <text x="10" y="45" font-family="Arial, sans-serif" font-size="40" font-weight="bold" fill="url(#grad)">
+    ASPIRANTS CLUB
+  </text>
+  <path d="M10,50 Q150,70 290,50" stroke="url(#grad)" stroke-width="3" fill="none" />
+  <circle cx="150" cy="30" r="20" fill="none" stroke="url(#grad)" stroke-width="3" />
+  <path d="M140,30 L150,20 L160,30" fill="none" stroke="url(#grad)" stroke-width="3" />
+</svg>

@@ -1,25 +1,27 @@
 import { NextResponse } from 'next/server';
-import { NextApiRequest } from 'next';
 import { auth } from '@clerk/nextjs/server';
-import clientPromise from '../../../lib/mongodb';
+import clientPromise from '@/lib/mongodb';
+import { Exam, EditHistoryEntry, PushOperator } from '@/types/mongodb';
 
-export async function POST(req: NextApiRequest) {
-  if (req.method !== 'POST') {
-    return NextResponse.json({ error: 'Method not allowed' }, { status: 405 });
+
+export async function POST(req: Request) {
+  const { userId } = auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { userId } = auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const body = await req.json();
+    const {examName, examDate, examDetails, source, username } = body;
+
+    if (!examName || !examDate || !examDetails || !source || !username) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const client = await clientPromise;
-    const db = client.db('examPrep');
-    const examInfo = db.collection('exams');
+    const db = client.db(process.env.MONGODB_DB);
+    const exams = db.collection<Exam>('exams');
     const examUpdates = db.collection('examUpdates');
-
-    const { examName, examDate, examDetails, source } = req.body;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -33,16 +35,31 @@ export async function POST(req: NextApiRequest) {
       return NextResponse.json({ error: 'You can only update exam information once per day' }, { status: 403 });
     }
 
-    const result = await examInfo.updateOne(
+    const editHistoryEntry: EditHistoryEntry = {
+      userId,
+      updatedAt: new Date(),
+      changes: {
+        examDate: new Date(examDate),
+        examDetails,
+        source,
+      }
+    };
+
+    const pushOperation: PushOperator<Exam> = {
+      editHistory: editHistoryEntry
+    };
+
+    const result = await exams.updateOne(
       { examName },
       {
         $set: {
-          examDate,
+          examDate: new Date(examDate),
           examDetails,
           source,
           lastUpdatedBy: userId,
           lastUpdatedAt: new Date()
         },
+        $push: pushOperation,
         $inc: { updateCount: 1 },
         $setOnInsert: { createdAt: new Date() }
       },
