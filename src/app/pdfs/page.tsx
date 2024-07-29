@@ -2,12 +2,15 @@
 
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import Header from '../../components/Header';
-import PDFViewer from '../../components/PDFViewer';
+
+// Dynamically import PDFViewer with no SSR
+const PDFViewer = dynamic(() => import('../../components/PDFViewer'), { ssr: false });
 
 export default function PDFViewingPage() {
   const searchParams = useSearchParams();
-  const pdfUrl = searchParams.get('pdfUrl');
+  const pdfUrl = searchParams?.get('pdfUrl') ?? null;
 
   return (
     <div className="min-h-screen bg-[#040E12] text-white">

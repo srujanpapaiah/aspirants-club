@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 
-// Optionally force dynamic rendering
-// export const dynamic = 'force-dynamic';
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
 
 const monthOrder: { [key: string]: number } = {
   'january': 0, 'february': 1, 'march': 2, 'april': 3, 'may': 4, 'june': 5,
@@ -66,9 +66,9 @@ export async function GET(req: NextRequest) {
     const currentDate = new Date();
 
     // Parse query parameters
-    const searchParams = req.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get('limit') ?? '5');
-    const page = parseInt(searchParams.get('page') ?? '1');
+    const url = new URL(req.url);
+    const limit = parseInt(url.searchParams.get('limit') ?? '5');
+    const page = parseInt(url.searchParams.get('page') ?? '1');
     const skip = (page - 1) * limit;
 
     const allExams = await exams
